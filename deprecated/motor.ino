@@ -37,7 +37,7 @@ void motor_close() {
       dutyCycle=(dutyCycle<255)?(dutyCycle+1):(dutyCycle);
       ledcWrite(CHANNEL, dutyCycle);// changing the PWM duty cycle
       if (LIMIT_FLAG) {
-        gate_state == CLOSED;
+        GATE_STATE == CLOSED;
         LIMIT_FLAG = false;
         motor_stop();
         return;
@@ -46,7 +46,7 @@ void motor_close() {
     }
   } else { // if signal = HIGH --> limit reached, don't move motor
     D_PRINTLN("Limit reached! Door already closed.");
-    gate_state == CLOSED;
+    GATE_STATE == CLOSED;
     return;
   }
 }
@@ -63,7 +63,7 @@ void motor_open() {
       dutyCycle=(dutyCycle<255)?(dutyCycle+1):(dutyCycle);
       ledcWrite(CHANNEL, dutyCycle);// changing the PWM duty cycle
       if (LIMIT_FLAG) {
-        gate_state == OPENED;
+        GATE_STATE == OPENED;
         LIMIT_FLAG = false;
         motor_stop();
         return;
@@ -72,7 +72,7 @@ void motor_open() {
     }
   } else { // if signal = HIGH --> limit reached, don't move motor
     D_PRINTLN("Limit reached! Door already opened.");
-    gate_state == OPENED;
+    GATE_STATE == OPENED;
     return;
   }
 }
@@ -83,11 +83,11 @@ void Task_Motor( void * parameter ) {//task run on core0
   xSemaphoreGive(baton);
   /***************************************LOOP************************************************/
   for (;;) {
-    if ((gate_state == CLOSED)||(gate_state == OPENED)) {
+    if ((GATE_STATE == CLOSED)||(GATE_STATE == OPENED)) {
       motor_stop();
-    } else if (gate_state == CLOSING) {
+    } else if (GATE_STATE == CLOSING) {
       motor_close();
-    } else if (gate_state == OPENING) {
+    } else if (GATE_STATE == OPENING) {
       motor_open();
     }
   }

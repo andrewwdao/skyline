@@ -52,7 +52,7 @@
 #define OPENED  "1"
 #define CLOSING "2"
 #define OPENING "3"
-String gate_state = OPENED;
+String GATE_STATE = OPENED;
 /******** Core 0 declaration ***********************/
 const int STACK   PROGMEM =  5000; // Stack size of CORE0 Task
 

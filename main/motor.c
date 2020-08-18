@@ -24,43 +24,59 @@ static void motor_stop(void);
 static void motor_open(void);
 static void motor_close(void);
 // ------ Private variables -----------------------------------
-// static xQueueHandle gpio_evt_queue = NULL;
-static portMUX_TYPE lock = portMUX_INITIALIZER_UNLOCKED;
+static xQueueHandle gpio_evt_queue = NULL;
 /******** interrupt vals **********/
-volatile bool LIMIT_FLAG = false;
-
+static volatile bool LIMIT_FLAG = false;
 // ------ PUBLIC variable definitions -------------------------
 
 //--------------------------------------------------------------
 // FUNCTION DEFINITIONS
 //--------------------------------------------------------------
-static void IRAM_ATTR open_limit_isr(void* arg)
+static void IRAM_ATTR gpio_isr(void* arg)
 {
-    portENTER_CRITICAL(&lock);
-    LIMIT_FLAG = true;
-    printf("Open Limit reached!\n");
-    // uint32_t gpio_num = (uint32_t) arg;
-    // xQueueSendFromISR(gpio_evt_queue, &gpio_num, NULL);
-    portENTER_CRITICAL(&lock);
+  uint32_t gpio_num = (uint32_t) arg;
+  xQueueSendFromISR(gpio_evt_queue, &gpio_num, NULL);
 }
 
-static void IRAM_ATTR close_limit_isr(void* arg)
+static void motor_isr_task(void* arg)
 {
-  portENTER_CRITICAL(&lock);
-  LIMIT_FLAG = true;
-  printf("Close Limit reached!\n");
-  portENTER_CRITICAL(&lock);
-}
+    uint32_t io_num;
+    for(;;) {
+        if(xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
+          // if ((io_num==OPEN_LIMIT_PIN)|(io_num==CLOSE_LIMIT_PIN)) {
+          //   LIMIT_FLAG = true;
+          //   //printf("GPIO[%d] intr, val: %d\n", io_num, gpio_get_level(io_num));
+          //   printf("LIMIT isr!\n");
+          // }
+          if (io_num==OPEN_LIMIT_PIN) {
+            LIMIT_FLAG = true;
+            printf("OPEN LIMIT isr!\n");
+          }
+          if (io_num==CLOSE_LIMIT_PIN) {
+            LIMIT_FLAG = true;
+            printf("CLOSE LIMIT isr!\n");
+          }
+          if (io_num==OPEN_DOOR_PIN) {
+            GATE_STATE = CLOSING;
+            printf("OPEN isr!\n");
+          }
+          if (io_num==CLOSE_DOOR_PIN) {
+            GATE_STATE = OPENING;
+            printf("CLOSE isr!\n");
+          }
+          if (io_num==STOP_DOOR_PIN) {
+            if (GATE_STATE == CLOSING) {
+              GATE_STATE = OPENED;
+              } else if (GATE_STATE == OPENING) {
+              GATE_STATE = CLOSED;
+            }
+            printf("STOP isr!\n");
+          }
 
-// static void gpio_task_example(void* arg)
-// {
-//     uint32_t io_num;
-//     for(;;) {
-//         if(xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
-//             printf("GPIO[%d] intr, val: %d\n", io_num, gpio_get_level(io_num));
-//         }
-//     }
-// }
+          vTaskDelay(500/portTICK_RATE_MS); //DELAYms 
+        }
+    }
+}
 
 /**
  * @brief Configure MCPWM module for brushed dc motor
@@ -72,8 +88,8 @@ static void motor_init(void)
     //disable interrupt
     io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
     //set as output mode
-    io_conf.mode = GPIO_MODE_OUTPUT;
-    //bit mask of the pins that you want to set,e.g.GPIO18/19
+    io_conf.mode = GPIO_MODE_INPUT_OUTPUT;
+    //bit mask of the pins that you want to set
     io_conf.pin_bit_mask = MOTOR_PIN_SEL;
     //disable pull-down mode
     io_conf.pull_down_en = 0;
@@ -92,7 +108,7 @@ static void motor_init(void)
     //2. initial mcpwm configuration
     printf("Configuring Initial Parameters of mcpwm...\n");
     mcpwm_config_t pwm_config;
-    pwm_config.frequency = 5000;    //frequency = 500Hz,
+    pwm_config.frequency = 10000;    //frequency in Hz,
     pwm_config.cmpr_a = 0;    //duty cycle of PWMxA = 0
     pwm_config.counter_mode = MCPWM_UP_COUNTER;
     pwm_config.duty_mode = MCPWM_DUTY_MODE_0;
@@ -109,21 +125,32 @@ static void motor_init(void)
     //set as input mode    
     io_conf.mode = GPIO_MODE_INPUT;
     //bit mask of the pins
-    io_conf.pin_bit_mask = LIMIT_PIN_SEL;
+    io_conf.pin_bit_mask = ISR_PIN_SEL;
     //enable pull-up mode
-    io_conf.pull_up_en = 1;
+    io_conf.pull_up_en = 0;
     gpio_config(&io_conf);
 
     //create a queue to handle gpio event from isr
-    // gpio_evt_queue = xQueueCreate(10, sizeof(uint32_t)); // uxQueueLength, uxItemSize
+    gpio_evt_queue = xQueueCreate(1, sizeof(uint32_t)); // uxQueueLength, uxItemSize
     //start gpio task - https://www.freertos.org/a00125.html
-    // xTaskCreate(motor_isr_task, "motor_isr_task", 2048, NULL, 10, NULL);
+    xTaskCreate(
+      motor_isr_task,                          /* Task Function */
+      "motor_isr_task",                        /* Name of Task */
+      2048,                               /* Stack size of Task */
+      NULL,                                /* Parameter of the task */
+      10,                                   /* Priority of the task, vary from 0 to N, bigger means higher piority, need to be 0 to be lower than the watchdog*/
+      NULL);                            /* Task handle to keep track of created task */
+
     //install gpio isr service
-    gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);
-    //hook isr handler for specific gpio pins
-    gpio_isr_handler_add(OPEN_LIMIT_PIN, open_limit_isr, (void*) OPEN_LIMIT_PIN);
-    gpio_isr_handler_add(CLOSE_LIMIT_PIN, close_limit_isr, (void*) CLOSE_LIMIT_PIN);
-    printf("Limit switches ready.\n");
+    gpio_uninstall_isr_service(); // clean up any left over
+    gpio_install_isr_service(ESP_INTR_FLAG_LEVEL1); //set a level 5 piority interrupt (7 is the highest)
+    // //hook isr handler for specific gpio pins
+    gpio_isr_handler_add(OPEN_LIMIT_PIN, gpio_isr, (void*) OPEN_LIMIT_PIN);
+    gpio_isr_handler_add(CLOSE_LIMIT_PIN, gpio_isr, (void*) CLOSE_LIMIT_PIN);
+    gpio_isr_handler_add(OPEN_DOOR_PIN, gpio_isr, (void*) OPEN_DOOR_PIN);
+    gpio_isr_handler_add(CLOSE_DOOR_PIN, gpio_isr, (void*) CLOSE_DOOR_PIN);
+    gpio_isr_handler_add(STOP_DOOR_PIN, gpio_isr, (void*) STOP_DOOR_PIN);
+    printf("ISR for Limit switches and buttons ready.\n");
 }
 
 /**
@@ -131,12 +158,18 @@ static void motor_init(void)
  */
 static void motor_stop(void)
 {
+  if (gpio_get_level(EN_PIN)| //if motor is still active, then stop it
+      gpio_get_level(INA_PIN)|
+      gpio_get_level(INB_PIN))
+
+  {
     gpio_set_level(EN_PIN, LOW);
     gpio_set_level(INA_PIN, LOW);
     gpio_set_level(INB_PIN, LOW);
     mcpwm_set_signal_low(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A);
     printf("Motor stopped\n");
-    vTaskDelay(100/portTICK_RATE_MS); //100ms
+  }
+  vTaskDelay(DELAY/portTICK_RATE_MS); //DELAYms
 }
 
 /**
@@ -144,32 +177,32 @@ static void motor_stop(void)
  */
 static void motor_open(void)
 {
-    if (!gpio_get_level(OPEN_LIMIT_PIN)) //if signal = LOW --> limit not triggered
+    if (gpio_get_level(OPEN_LIMIT_PIN)) //if signal = HIGH --> limit not triggered
     {
-        printf("Open command. Motor moving...\n");
-        gpio_set_level(INA_PIN, LOW);
-        gpio_set_level(INB_PIN, HIGH);
-        gpio_set_level(EN_PIN, HIGH);
-        
-        int dutyCycle=0;
-        for(;;) {
-        dutyCycle=(dutyCycle<255)?(dutyCycle+1):(dutyCycle);
-        // ledcWrite(CHANNEL, dutyCycle);// changing the PWM duty cycle
-        mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, dutyCycle);
-        mcpwm_set_duty_type(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, MCPWM_DUTY_MODE_0); //call this each time, if operator was previously in low/high state
+      printf("Open command. Motor moving...\n");
+      gpio_set_level(INA_PIN, LOW);
+      gpio_set_level(INB_PIN, HIGH);
+      gpio_set_level(EN_PIN, HIGH);
+      
+      int dutyCycle=0;
+      for(;;) {
+      dutyCycle=(dutyCycle<255)?(dutyCycle+1):(dutyCycle);
+      // ledcWrite(CHANNEL, dutyCycle);// changing the PWM duty cycle
+      mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, dutyCycle);
+      mcpwm_set_duty_type(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, MCPWM_DUTY_MODE_0); //call this each time, if operator was previously in low/high state
 
-        if (LIMIT_FLAG) {
-            gate_state = OPENED;
+      if (LIMIT_FLAG) {
+            GATE_STATE = OPENED;
             LIMIT_FLAG = false;
             motor_stop();
             return;
         }
-        vTaskDelay(100/portTICK_RATE_MS); //100ms
-        }
-    } else { // if signal = HIGH --> limit reached, don't move motor
-        printf("Limit reached! Door already closed.\n");
-        gate_state = OPENED;
-        return;
+      vTaskDelay(DELAY/portTICK_RATE_MS); //DELAYms
+      }
+    } else { // if signal = LOW --> limit reached, don't move motor
+      printf("Limit reached! Door already opened.\n");
+      GATE_STATE = OPENED;
+      return;
     }
 }
 
@@ -178,7 +211,7 @@ static void motor_open(void)
  */
 static void motor_close(void)
 {
-    if (!gpio_get_level(CLOSE_LIMIT_PIN)) //if signal = LOW --> limit not triggered
+    if (gpio_get_level(CLOSE_LIMIT_PIN)) //if signal = HIGH --> limit not triggered
     {
         printf("Close command. Motor moving...\n");
         gpio_set_level(INA_PIN, HIGH);
@@ -193,16 +226,16 @@ static void motor_close(void)
         mcpwm_set_duty_type(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, MCPWM_DUTY_MODE_0); //call this each time, if operator was previously in low/high state
 
         if (LIMIT_FLAG) {
-            gate_state = CLOSED;
+            GATE_STATE = CLOSED;
             LIMIT_FLAG = false;
             motor_stop();
             return;
         }
-        vTaskDelay(100/portTICK_RATE_MS); //100ms
+        vTaskDelay(DELAY/portTICK_RATE_MS); //DELAYms
         }
-    } else { // if signal = HIGH --> limit reached, don't move motor
+    } else { // if signal = LOW --> limit reached, don't move motor
         printf("Limit reached! Door already closed.\n");
-        gate_state = CLOSED;
+        GATE_STATE = CLOSED;
         return;
     }
 }
@@ -216,14 +249,14 @@ void motor_task(void *arg)
    //mcpwm gpio initialization and configuration
     motor_init();
     xSemaphoreTake(baton, portMAX_DELAY); // ( TickType_t ) and portTICK_PERIOD_MS is also available , view: http://esp32.info/docs/esp_idf/html/d1/d19/group__xSemaphoreTake.html 
-    xSemaphoreGive(baton);
+    xSemaphoreGive(baton); //give out the baton for other thread to catch
   /***************************************LOOP************************************************/
   for (;;) {
-    if ((gate_state == CLOSED)||(gate_state == OPENED)) {
+    if ((GATE_STATE == CLOSED)||(GATE_STATE == OPENED)) {
       motor_stop();
-    } else if (gate_state == CLOSING) {
+    } else if (GATE_STATE == CLOSING) {
       motor_close();
-    } else if (gate_state == OPENING) {
+    } else if (GATE_STATE == OPENING) {
       motor_open();
     }
   }

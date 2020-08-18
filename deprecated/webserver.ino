@@ -42,19 +42,19 @@ void handle_root() { // Handle home url (/skyline)
 }
 
 void get_state() { // Handle get_state url (/get_state)
-  server.send(200, "application/json", gate_state);
+  server.send(200, "application/json", GATE_STATE);
 }
 
 void rotate_motor() { // Handle rotate url (/rotate)
-  if (gate_state == CLOSED) {
-    gate_state = OPENING;
-  } else if (gate_state == OPENED) {
-    gate_state = CLOSING;
-  } else if (gate_state == CLOSING) {
-    gate_state = OPENED;
-  } else if (gate_state == OPENING) {
-    gate_state = CLOSED;
+  if (GATE_STATE == CLOSED) {
+    GATE_STATE = OPENING;
+  } else if (GATE_STATE == OPENED) {
+    GATE_STATE = CLOSING;
+  } else if (GATE_STATE == CLOSING) {
+    GATE_STATE = OPENED;
+  } else if (GATE_STATE == OPENING) {
+    GATE_STATE = CLOSED;
   }
   D_PRINTLN("Command Received!");
-  server.send(200, "application/json", gate_state);
+  server.send(200, "application/json", GATE_STATE);
 }

@@ -28,12 +28,15 @@
 #define INA_PIN 25
 #define INB_PIN 26
 #define EN_PIN  33
-#define MOTOR_PIN_SEL  ((1ULL<<EN_PIN) | (1ULL<<INA_PIN) | (1ULL<<INB_PIN))
-
-// setting PWM properties
-#define OPEN_LIMIT_PIN  17
-#define CLOSE_LIMIT_PIN 18
-#define LIMIT_PIN_SEL  ((1ULL<<OPEN_LIMIT_PIN) | (1ULL<<CLOSE_LIMIT_PIN))
+#define MOTOR_PIN_SEL  ((1ULL<<EN_PIN)|(1ULL<<INA_PIN)|(1ULL<<INB_PIN))
+  
+// isr pins
+#define OPEN_LIMIT_PIN  32
+#define CLOSE_LIMIT_PIN 35
+#define OPEN_DOOR_PIN 22
+#define CLOSE_DOOR_PIN 23
+#define STOP_DOOR_PIN 4
+#define ISR_PIN_SEL  ((1ULL<<OPEN_LIMIT_PIN)|(1ULL<<CLOSE_LIMIT_PIN)|(1ULL<<OPEN_DOOR_PIN)|(1ULL<<CLOSE_DOOR_PIN)|(1ULL<<STOP_DOOR_PIN))
 
 /**************** parameters define *********************/
 // setting PWM properties
@@ -41,11 +44,10 @@
 #define CHANNEL 0
 #define RES     8
 
-#define ESP_INTR_FLAG_DEFAULT 0
 // ------ Public function prototypes --------------------------
 void motor_task(void *);
 
 // ------ Public variable -------------------------------------
 extern SemaphoreHandle_t baton;
-extern uint8_t gate_state;
+extern volatile char GATE_STATE;
 #endif

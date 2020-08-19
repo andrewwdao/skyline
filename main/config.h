@@ -15,13 +15,6 @@
 #include "esp_system.h"
 #include "esp_log.h"
 
-// #include "WiFi.h"
-// #include <WebServer.h>
-
-// //OTA LIBRARY
-// #include <ESPmDNS.h>
-// #include <WiFiUdp.h>
-// #include <ArduinoOTA.h>
 
 #ifdef DEBUG // Define actual debug output functions when necessary.
   // #ifndef DEBUG_BEGIN()
@@ -52,8 +45,5 @@
 #define OPENING '3'
 /******** Core 0 declaration ***********************/
 #define STACK   4096 // Stack size of CORE0 Task
-
-
-//https://art-hanoi.com/vncode/
 
 #endif //__CONFIG_H

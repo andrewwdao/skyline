@@ -1,7 +1,7 @@
 // HTML & CSS contents which display on web server
-const char* html_response = "<html> \
+#define HTML_RESPONSE "<html> \
     <head> \
-        <title>Gieng Troi Tu Dong</title> \
+        <title>C&#7917;a Gi&#7871;ng Tr&#7901;i</title> \
         <meta name=\"viewport\" content=\"width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;\"/> \
         <style> \
         * { font-family: Arial; } \
@@ -41,9 +41,9 @@ const char* html_response = "<html> \
             position: absolute; \
             bottom: 3%; \
             left: 50%; \
+            text-align: center; \
             transform: translate(-50%, 0); \
-            font-size: 90%; \
-            font-style: italic; \
+            font-size: 80%; \
             cursor: pointer; \
         } \
  \
@@ -146,13 +146,13 @@ const char* html_response = "<html> \
     </script> \
 </head> \
 <body> \
-    <div id=\"header\">Gi&#7871;ng Tr&#7901;i T&#7921; &#272;&#7897;ng</div> \
+    <div id=\"header\">C&#7917;a Gi&#7871;ng Tr&#7901;i</div> \
     <button id=\"btn\" onclick=\"toggleState()\" class=\"Close\">Kh&#244;ng c&#243; k&#7871;t n&#7889;i</button> \
-    <div onclick=\"toggleCredit()\" id=\"footer\">© 2020, MIS-CTU team (MIS S.W.A.T).</div> \
+    <div onclick=\"toggleCredit()\" id=\"footer\"><b><u>&copy; 2020, MIS-CTU team.</b></u></div> \
     <div id=\"credit-pannel\"> \
-        <h1 id=\"credit-header\">Automatic Skyline</h1> \
+        <h1 id=\"credit-header\">Skyline Window</h1> \
         <div id=\"credit-content\"> \
-            <p><strong>&copy; 2020, MIS-CTU team (MIS S.W.A.T).</strong> Licensed under the GNU v3 License.</p> \
+            <p><strong>&copy; 2020, MIS-CTU team (MIS  S.W.A.T)</strong> Licensed under the GNU v3 License.</p> \
             <ul> \
                 <li>Khanh-Tran Nguyen</li> \
                 <li>Minh-Luan Nguyen</li> \
@@ -173,6 +173,6 @@ const char* html_response = "<html> \
         <button id=\"credit-btn\" onclick=\"toggleCredit()\">OK</button> \
     </div> \
 </body> \
-</html>";
+</html>"
 
 //https://art-hanoi.com/vncode/

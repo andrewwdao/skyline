@@ -1642,6 +1642,204 @@
     {
         "children": [
             {
+                "children": [],
+                "depends_on": null,
+                "help": "SSID (network name) to connect to.",
+                "id": "WIFI_SSID",
+                "name": "WIFI_SSID",
+                "range": null,
+                "title": "WiFi SSID",
+                "type": "string"
+            },
+            {
+                "children": [],
+                "depends_on": null,
+                "help": "WiFi password (WPA2) to use.",
+                "id": "WIFI_PWD",
+                "name": "WIFI_PWD",
+                "range": null,
+                "title": "WiFi Password",
+                "type": "string"
+            },
+            {
+                "children": [],
+                "depends_on": null,
+                "help": "Interval for station to listen to beacon from AP. The unit of listen interval is one beacon interval.\nFor example, if beacon interval is 100 ms and listen interval is 3, the interval for station to listen\nto beacon is 300 ms.",
+                "id": "LISTEN_INTERVAL",
+                "name": "LISTEN_INTERVAL",
+                "range": null,
+                "title": "WiFi listen interval",
+                "type": "int"
+            },
+            {
+                "children": [
+                    {
+                        "children": [],
+                        "depends_on": "<choice POWER_SAVE_MODE>",
+                        "help": null,
+                        "id": "POWER_SAVE_NONE",
+                        "name": "POWER_SAVE_NONE",
+                        "range": null,
+                        "title": "none",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "<choice POWER_SAVE_MODE>",
+                        "help": null,
+                        "id": "POWER_SAVE_MIN",
+                        "name": "POWER_SAVE_MIN",
+                        "range": null,
+                        "title": "minimum power save",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "<choice POWER_SAVE_MODE>",
+                        "help": null,
+                        "id": "POWER_SAVE_MAX",
+                        "name": "POWER_SAVE_MAX",
+                        "range": null,
+                        "title": "maximum power save",
+                        "type": "bool"
+                    }
+                ],
+                "depends_on": null,
+                "help": "Power save mode for the esp32 to use. Modem sleep mode includes minimum and maximum power save modes.\nIn minimum power save mode, station wakes up every DTIM to receive beacon. Broadcast data will not be\nlost because it is transmitted after DTIM. However, it can not save much more power if DTIM is short\nfor DTIM is determined by AP.\nIn maximum power save mode, station wakes up every listen interval to receive beacon. Broadcast data\nmay be lost because station may be in sleep state at DTIM time. If listen interval is longer, more power\nis saved but broadcast data is more easy to lose.",
+                "id": "skyline-window-configuration-choose-power-save-mode",
+                "name": "POWER_SAVE_MODE",
+                "title": "choose power save mode",
+                "type": "choice"
+            },
+            {
+                "children": [
+                    {
+                        "children": [],
+                        "depends_on": "<choice MAX_CPU_FREQ>",
+                        "help": null,
+                        "id": "MAX_CPU_FREQ_80",
+                        "name": "MAX_CPU_FREQ_80",
+                        "range": null,
+                        "title": "80 MHz",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "<choice MAX_CPU_FREQ>",
+                        "help": null,
+                        "id": "MAX_CPU_FREQ_160",
+                        "name": "MAX_CPU_FREQ_160",
+                        "range": null,
+                        "title": "160 MHz",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "<choice MAX_CPU_FREQ>",
+                        "help": null,
+                        "id": "MAX_CPU_FREQ_240",
+                        "name": "MAX_CPU_FREQ_240",
+                        "range": null,
+                        "title": "240 MHz",
+                        "type": "bool"
+                    }
+                ],
+                "depends_on": null,
+                "help": "Maximum CPU frequency to use for dynamic frequency scaling.",
+                "id": "skyline-window-configuration-maximum-cpu-frequency",
+                "name": "MAX_CPU_FREQ",
+                "title": "Maximum CPU frequency",
+                "type": "choice"
+            },
+            {
+                "children": [],
+                "depends_on": null,
+                "help": null,
+                "id": "MAX_CPU_FREQ_MHZ",
+                "name": "MAX_CPU_FREQ_MHZ",
+                "range": null,
+                "title": null,
+                "type": "int"
+            },
+            {
+                "children": [
+                    {
+                        "children": [],
+                        "depends_on": "(IDF_TARGET_ESP32S2 || ESP32_XTAL_FREQ_40 || ESP32_XTAL_FREQ_AUTO) && <choice MIN_CPU_FREQ>",
+                        "help": null,
+                        "id": "MIN_CPU_FREQ_40M",
+                        "name": "MIN_CPU_FREQ_40M",
+                        "range": null,
+                        "title": "40 MHz (use with 40MHz XTAL)",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "(IDF_TARGET_ESP32S2 || ESP32_XTAL_FREQ_40 || ESP32_XTAL_FREQ_AUTO) && <choice MIN_CPU_FREQ>",
+                        "help": null,
+                        "id": "MIN_CPU_FREQ_20M",
+                        "name": "MIN_CPU_FREQ_20M",
+                        "range": null,
+                        "title": "20 MHz (use with 40MHz XTAL)",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "(IDF_TARGET_ESP32S2 || ESP32_XTAL_FREQ_40 || ESP32_XTAL_FREQ_AUTO) && <choice MIN_CPU_FREQ>",
+                        "help": null,
+                        "id": "MIN_CPU_FREQ_10M",
+                        "name": "MIN_CPU_FREQ_10M",
+                        "range": null,
+                        "title": "10 MHz (use with 40MHz XTAL)",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "(ESP32_XTAL_FREQ_26 || ESP32_XTAL_FREQ_AUTO) && <choice MIN_CPU_FREQ>",
+                        "help": null,
+                        "id": "MIN_CPU_FREQ_26M",
+                        "name": "MIN_CPU_FREQ_26M",
+                        "range": null,
+                        "title": "26 MHz (use with 26MHz XTAL)",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "(ESP32_XTAL_FREQ_26 || ESP32_XTAL_FREQ_AUTO) && <choice MIN_CPU_FREQ>",
+                        "help": null,
+                        "id": "MIN_CPU_FREQ_13M",
+                        "name": "MIN_CPU_FREQ_13M",
+                        "range": null,
+                        "title": "13 MHz (use with 26MHz XTAL)",
+                        "type": "bool"
+                    }
+                ],
+                "depends_on": null,
+                "help": "Minimum CPU frequency to use for dynamic frequency scaling.\nShould be set to XTAL frequency or XTAL frequency divided by integer.",
+                "id": "skyline-window-configuration-minimum-cpu-frequency",
+                "name": "MIN_CPU_FREQ",
+                "title": "Minimum CPU frequency",
+                "type": "choice"
+            },
+            {
+                "children": [],
+                "depends_on": null,
+                "help": null,
+                "id": "MIN_CPU_FREQ_MHZ",
+                "name": "MIN_CPU_FREQ_MHZ",
+                "range": null,
+                "title": null,
+                "type": "int"
+            }
+        ],
+        "depends_on": null,
+        "id": "skyline-window-configuration",
+        "title": "Skyline Window Configuration",
+        "type": "menu"
+    },
+    {
+        "children": [
+            {
                 "children": [
                     {
                         "children": [],

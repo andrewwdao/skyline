@@ -24,10 +24,12 @@ SemaphoreHandle_t baton;
 
 volatile char GATE_STATE = OPENED;
 
-/* @brief tag used for ESP serial console messages */
+/** @brief tag used for ESP serial console messages */
 static const char TAG[] = "MAIN";
 
-
+/**
+ * @brief auto disconnect_handler for stopping webserver in wifi service
+ */
 static void disconnect_handler(void* arg, esp_event_base_t event_base, 
                                int32_t event_id, void* event_data)
 {
@@ -49,7 +51,7 @@ static void connect_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
-/*
+/**
  * @brief RTOS task that periodically prints the heap memory available.
  * @note Pure debug information, should not be ever started on production code! This is an example on how you can integrate your code with wifi-manager
  */
@@ -61,60 +63,12 @@ void monitoring_task(void *arg)
 	}
 }
 
-/**
- * @brief this is an exemple of a callback that you can setup in your own app to get notified of wifi manager event.
- */
-// void connection_ok(void *arg)
-// {
-// 	ip_event_got_ip_t* param = (ip_event_got_ip_t*)arg;
-// 	/* transform IP to human readable string */
-// 	char str_ip[16];
-// 	esp_ip4addr_ntoa(&param->ip_info.ip, str_ip, IP4ADDR_STRLEN_MAX);
-// 	printf("Connected at IP %s", str_ip);
-
-// }
-
-// static esp_err_t webapp_handler(httpd_req_t *req){
-
-// 	/* our custom page sits at /ctl */
-// 	if(strcmp(req->uri, "/ctl") == 0){
-// 		ESP_LOGI(TAG, "Serving page /ctl");
-// 		httpd_resp_set_status(req, "200 OK");
-// 		httpd_resp_set_type(req, "text/html");
-// 		httpd_resp_send(req, html_response, strlen(html_response));
-// 	} else if(strcmp(req->uri, "/get_state") == 0){
-// 		ESP_LOGI(TAG, "Serving page /get_state");
-// 		httpd_resp_set_status(req, "200 OK");
-// 		httpd_resp_set_type(req, "application/json");
-// 		httpd_resp_send(req, &GATE_STATE, 1);
-// 	} else if(strcmp(req->uri, "/rotate") == 0){
-// 		ESP_LOGI(TAG, "Serving page /rotate");
-//         if (GATE_STATE == CLOSED) {
-//             GATE_STATE = OPENING;
-//         } else if (GATE_STATE == OPENED) {
-//             GATE_STATE = CLOSING;
-//         } else if (GATE_STATE == CLOSING) {
-//             GATE_STATE = OPENED;
-//         } else if (GATE_STATE == OPENING) {
-//             GATE_STATE = CLOSED;
-//         }
-// 		httpd_resp_set_status(req, "200 OK");
-// 		httpd_resp_set_type(req, "application/json");
-// 		httpd_resp_send(req, &GATE_STATE, 1);
-// 	} else
-//     {
-// 		/* send a 404 otherwise */
-// 		httpd_resp_send_404(req);
-// 	}
-// 	return ESP_OK;
-// }
-
 void app_main(void)
 {
     vSemaphoreCreateBinary(baton); //initialize binary semaphore //baton = xSemaphoreCreateBinary(); //this works too but not as good as the current use
     xSemaphoreTake(baton, portMAX_DELAY); // ( TickType_t ) and portTICK_PERIOD_MS is also available , view: http://esp32.info/docs/esp_idf/html/d1/d19/group__xSemaphoreTake.html 
 
-    // Initialize NVS - must have
+    // --------Initialize NVS - must have -------
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
@@ -122,6 +76,7 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
     
+    //-------------- Motor task ------------------
     xTaskCreate(
         &motor_task,                          /* Task Function */
         "motor_task",                        /* Name of Task */
@@ -130,24 +85,9 @@ void app_main(void)
         3,                                   /* Priority of the task, vary from 0 to N, bigger means higher piority, need to be 0 to be lower than the watchdog*/
         &TaskSub);                            /* Task handle to keep track of created task */
 
-    // xTaskCreate(
-    //     &webserver_task,                          /* Task Function */
-    //     "webserver_task",                        /* Name of Task */
-    //     STACK,                               /* Stack size of Task */
-    //     NULL,                                /* Parameter of the task */
-    //     4,                                   /* Priority of the task, vary from 0 to N, bigger means higher piority, need to be 0 to be lower than the watchdog*/
-    //     &TaskSub);                            /* Task handle to keep track of created task */
- 
-    // wifi_manager_start();
-    // /* register a callback as an example to how you can integrate your code with the wifi manager */
-	// wifi_manager_set_callback(WM_EVENT_STA_GOT_IP, &connection_ok);
-    // /* set custom handler for the http server
-	//  * Now navigate to /controller to see the custom page
-	//  */
-	// http_app_set_handler_hook(HTTP_GET, &webapp_handler);
-
     xSemaphoreGive(baton); //give out the baton for other thread to catch
 
+    //------------ Webserver task -----------------
     //wifi and webserver initialization and configuration
     wifiSTA_init();
 
@@ -162,7 +102,8 @@ void app_main(void)
     /* Start the server for the first time */
     server = start_webserver();
 
-        
+    
+    //------------ monitoring task -----------------
     //A task on core 2 that monitors free heap memory
     xTaskCreatePinnedToCore(
         &monitoring_task,                    /* Task Function */

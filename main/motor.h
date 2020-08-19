@@ -31,11 +31,11 @@
 #define MOTOR_PIN_SEL  ((1ULL<<EN_PIN)|(1ULL<<INA_PIN)|(1ULL<<INB_PIN))
   
 // isr pins
-#define OPEN_LIMIT_PIN  32
-#define CLOSE_LIMIT_PIN 35
-#define OPEN_DOOR_PIN 22
-#define CLOSE_DOOR_PIN 23
-#define STOP_DOOR_PIN 4
+#define OPEN_LIMIT_PIN  22
+#define CLOSE_LIMIT_PIN 23
+#define OPEN_DOOR_PIN 18
+#define CLOSE_DOOR_PIN 19
+#define STOP_DOOR_PIN 21
 #define ISR_PIN_SEL  ((1ULL<<OPEN_LIMIT_PIN)|(1ULL<<CLOSE_LIMIT_PIN)|(1ULL<<OPEN_DOOR_PIN)|(1ULL<<CLOSE_DOOR_PIN)|(1ULL<<STOP_DOOR_PIN))
 
 /**************** parameters define *********************/

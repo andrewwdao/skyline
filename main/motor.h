@@ -1,8 +1,7 @@
 /*------------------------------------------------------------*-
   Brushed DC motor controller - header file
-  ESP32 CORE0 - COMMUNICATION CORE
   (c) Minh-An Dao - Nhu-Phung Tran-Thi 2020
-  version 1.00 - 15/08/2020
+  version 1.10 - 20/08/2020
 ---------------------------------------------------------------
  * Use MCPWM module to control brushed dc motor.
  * 
@@ -40,15 +39,14 @@
 
 /**************** parameters define *********************/
 // setting PWM properties
-#define FREQ    5000
-#define CHANNEL 0
-#define RES     8
+#define FREQ    10000
 
 // ------ Public function prototypes --------------------------
 void motor_task(void *);
 
 // ------ Public variable -------------------------------------
-extern SemaphoreHandle_t baton;
+// extern SemaphoreHandle_t baton;
 extern char GATE_STATE;
+extern bool STOP_FLAG;
 
 #endif

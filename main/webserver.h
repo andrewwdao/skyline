@@ -1,7 +1,7 @@
 /*------------------------------------------------------------*-
   Webserver - header file
   (c) Minh-An Dao - Anh Khoi Tran 2020
-  version 1.00 - 19/08/2020
+  version 1.00 - 20/08/2020
 ---------------------------------------------------------------
  * Init Wifi and create local webserver
  * 
@@ -15,9 +15,10 @@
 #include "nvs_flash.h"
 #include <esp_http_server.h>
 
-#include "my_html.h"
 // ------ Public constants ------------------------------------
-/*set the ssid and password via "idf.py menuconfig"*/
+/**
+ * @note set the ssid and password via "idf.py menuconfig
+ */
 #define WIFI_SSID CONFIG_WIFI_SSID
 #define WIFI_PWD  CONFIG_WIFI_PWD
 
@@ -31,16 +32,15 @@
 #define PS_MODE WIFI_PS_NONE
 #else
 #define PS_MODE WIFI_PS_NONE
-#endif /*CONFIG_POWER_SAVE_MODE*/
+#endif
 
 
 // ------ Public function prototypes --------------------------
-// void webserver_task(void *);
 void           wifiSTA_init(void);
 httpd_handle_t start_webserver(void);
 void           stop_webserver(httpd_handle_t);
 // ------ Public variable -------------------------------------
 // extern SemaphoreHandle_t baton;
 extern char GATE_STATE;
-
+extern bool STOP_FLAG;
 #endif

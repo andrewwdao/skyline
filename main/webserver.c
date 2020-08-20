@@ -1,7 +1,7 @@
 /*------------------------------------------------------------*-
   Webserver - header file
   (c) Minh-An Dao - Anh Khoi Tran 2020
-  version 1.00 - 19/08/2020
+  version 1.00 - 20/08/2020
 ---------------------------------------------------------------
  * Init Wifi and create local webserver
  * 
@@ -9,19 +9,13 @@
 #ifndef __WEBSERVER_C
 #define __WEBSERVER_C
 #include "webserver.h"
-
+#include "my_html.h"
 // ------ Private constants -----------------------------------
 
 // ------ Private function prototypes -------------------------
 static void           wifiSTA_handler(void*, esp_event_base_t, int32_t, void*);
-// static esp_err_t      control_get_handler(httpd_req_t);
-// static esp_err_t      getstate_get_handler(httpd_req_t);
-// static esp_err_t      rotate_get_handler(httpd_req_t);
-// static void           wifiSTA_init(void);
 static httpd_handle_t my_httpd_start(void);
 static void           my_httpd_stop(httpd_handle_t);
-// static httpd_handle_t start_webserver(void);
-// static void           stop_webserver(httpd_handle_t);
 // ------ Private variables -----------------------------------
 static const char *TAG = "webserver";
 static int pre_start_mem, post_stop_mem;
@@ -31,6 +25,9 @@ static int pre_start_mem, post_stop_mem;
 //--------------------------------------------------------------
 // FUNCTION DEFINITIONS
 //--------------------------------------------------------------
+/**
+ * @brief handler for wifi connecting
+ */
 static void wifiSTA_handler(void* arg, esp_event_base_t event_base,
                           int32_t event_id, void* event_data)
 {
@@ -40,10 +37,13 @@ static void wifiSTA_handler(void* arg, esp_event_base_t event_base,
         esp_wifi_connect();
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
-        ESP_LOGI(TAG, "got ip: " IPSTR, IP2STR(&event->ip_info.ip));
+        ESP_LOGW(TAG, "got ip: " IPSTR, IP2STR(&event->ip_info.ip));
     }
 }
 
+/**
+ * @brief handler for /ctl url
+ */
 static esp_err_t control_get_handler(httpd_req_t *req)
 {
     ESP_LOGI(TAG, "Serving page /ctl");
@@ -53,6 +53,9 @@ static esp_err_t control_get_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+/**
+ * @brief handler for /get_state url
+ */
 static esp_err_t getstate_get_handler(httpd_req_t *req)
 {
     ESP_LOGI(TAG, "Serving page /get_state");
@@ -62,6 +65,9 @@ static esp_err_t getstate_get_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+/**
+ * @brief handler for /rotate url
+ */
 static esp_err_t rotate_get_handler(httpd_req_t *req)
 {
     ESP_LOGI(TAG, "Serving page /rotate");
@@ -70,8 +76,10 @@ static esp_err_t rotate_get_handler(httpd_req_t *req)
     } else if (GATE_STATE == OPENED) {
         GATE_STATE = CLOSING;
     } else if (GATE_STATE == CLOSING) {
+        STOP_FLAG = true;
         GATE_STATE = OPENED;
     } else if (GATE_STATE == OPENING) {
+        STOP_FLAG = true;
         GATE_STATE = CLOSED;
     }
     httpd_resp_set_status(req, HTTPD_200); // 200 OK
@@ -112,14 +120,16 @@ static void register_basic_handlers(httpd_handle_t hd)
             return;
         }
     }
-    ESP_LOGI(TAG, "Success");
+    ESP_LOGI(TAG, "Done");
 }
 
-/*init wifi as sta and set power save mode*/
+/**
+ * @brief init wifi as sta and set power save mode
+ */
 void wifiSTA_init(void)
 {
 
-    printf("Starting wifi...\n");
+    ESP_LOGI(TAG, "Starting wifi...\n");
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
@@ -161,7 +171,7 @@ void wifiSTA_init(void)
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
 
-    printf("entering Power save mode...\n");
+    ESP_LOGI(TAG, "entering Power save mode...\n");
 #if CONFIG_PM_ENABLE
     // Configure dynamic frequency scaling:
     // maximum and minimum frequencies are set in sdkconfig,
@@ -241,41 +251,4 @@ void stop_webserver(httpd_handle_t hd)
     my_httpd_stop(hd);
 }
 
-/**
- * @brief Webserver task to run on main
- */
-// void webserver_task(void *arg)
-// {
-//   /***************************************SETUP************************************************/
-//    // Initialize NVS - must have
-//     esp_err_t ret = nvs_flash_init();
-//     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-//         ESP_ERROR_CHECK(nvs_flash_erase());
-//         ret = nvs_flash_init();
-//     }
-//     ESP_ERROR_CHECK(ret);
-
-//    //wifi and webserver initialization and configuration
-//     wifiSTA_init();
-
-//     static httpd_handle_t server = NULL;
-//     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT,
-//                                                IP_EVENT_STA_GOT_IP,
-//                                                &connect_handler, &server));
-//     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT,
-//                                                WIFI_EVENT_STA_DISCONNECTED,
-//                                                &disconnect_handler, &server));
-
-//    /***************************************LOOP************************************************/
-//   for (;;) {
-//     // if ((GATE_STATE == CLOSED)||(GATE_STATE == OPENED)) {
-//     //   motor_stop();
-//     // } else if (GATE_STATE == CLOSING) {
-//     //   motor_close();
-//     // } else if (GATE_STATE == OPENING) {
-//     //   motor_open();
-//     // }
-//     vTaskDelay(pdMS_TO_TICKS(10000));
-//   }
-// }
 #endif

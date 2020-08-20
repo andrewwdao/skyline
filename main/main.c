@@ -1,32 +1,25 @@
-/* brushed dc motor control example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
-
-/*
- * This example will show you how to use MCPWM module to control brushed dc motor.
- * This code is tested with L298 motor driver.
- * User may need to make changes according to the motor driver they use.
-*/
-
+/*------------------------------------------------------------*-
+  main - source file
+  (c) Minh-An Dao - Anh Khoi Tran - Nhu-Phung Tran-Thi 2020
+  version 1.00 - 20/08/2020
+---------------------------------------------------------------
+ * 
+ --------------------------------------------------------------*/
 #include "config.h"
 #include "motor.h"
 #include "webserver.h"
-// #include "wifi_manager.h"
-// #include "http_app.h"
 
-TaskHandle_t TaskSub;
-SemaphoreHandle_t baton;
-
+// ------ Public variables ------------------------------------
+/** @brief status of the gate, which will involve control the motor */
 char GATE_STATE = OPENED;
-
+/** @brief flag for stopping the motor */
+bool STOP_FLAG = false;
 /** @brief tag used for ESP serial console messages */
 static const char TAG[] = "MAIN";
 
+//--------------------------------------------------------------
+// FUNCTION DEFINITIONS
+//--------------------------------------------------------------
 /**
  * @brief auto disconnect_handler for stopping webserver in wifi service
  */
@@ -40,7 +33,9 @@ static void disconnect_handler(void* arg, esp_event_base_t event_base,
         *server = NULL;
     }
 }
-
+/**
+ * @brief auto connect_handler for creating webserver in wifi service
+ */
 static void connect_handler(void* arg, esp_event_base_t event_base, 
                             int32_t event_id, void* event_data)
 {
@@ -63,11 +58,11 @@ void monitoring_task(void *arg)
 	}
 }
 
+/**
+ * @brief main app
+ */
 void app_main(void)
 {
-    vSemaphoreCreateBinary(baton); //initialize binary semaphore //baton = xSemaphoreCreateBinary(); //this works too but not as good as the current use
-    xSemaphoreTake(baton, portMAX_DELAY); // ( TickType_t ) and portTICK_PERIOD_MS is also available , view: http://esp32.info/docs/esp_idf/html/d1/d19/group__xSemaphoreTake.html 
-
     // --------Initialize NVS - must have -------
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -78,14 +73,12 @@ void app_main(void)
     
     //-------------- Motor task ------------------
     xTaskCreate(
-        &motor_task,                          /* Task Function */
-        "motor_task",                        /* Name of Task */
-        STACK,                               /* Stack size of Task */
-        NULL,                                /* Parameter of the task */
-        3,                                   /* Priority of the task, vary from 0 to N, bigger means higher piority, need to be 0 to be lower than the watchdog*/
-        &TaskSub);                            /* Task handle to keep track of created task */
-
-    xSemaphoreGive(baton); //give out the baton for other thread to catch
+        &motor_task,    /* Task Function */
+        "motor_task",   /* Name of Task */
+        4096,          /* Stack size of Task */
+        NULL,           /* Parameter of the task */
+        3,              /* Priority of the task, vary from 0 to N, bigger means higher piority, need to be 0 to be lower than the watchdog*/
+        NULL);          /* Task handle to keep track of created task */
 
     //------------ Webserver task -----------------
     //wifi and webserver initialization and configuration
@@ -102,16 +95,15 @@ void app_main(void)
     /* Start the server for the first time */
     server = start_webserver();
 
-    
     //------------ monitoring task -----------------
-    //A task on core 2 that monitors free heap memory
+    //A task on core 2 that monitors free heap memory - should be removed on production
     xTaskCreatePinnedToCore(
-        &monitoring_task,                    /* Task Function */
-        "monitoring_task",                 /* Name of Task */
-        2048,                                /* Stack size of Task */
-        NULL,                                /* Parameter of the task */
-        1,                                   /* Priority of the task, vary from 0 to N, bigger means higher piority, need to be 0 to be lower than the watchdog*/
-        NULL,                                /* Task handle to keep track of created task */
-        1);                                  /* CoreID */
+        &monitoring_task,    /* Task Function */
+        "monitoring_task",   /* Name of Task */
+        2048,                /* Stack size of Task */
+        NULL,                /* Parameter of the task */
+        1,                   /* Priority of the task, vary from 0 to N, bigger means higher piority, need to be 0 to be lower than the watchdog*/
+        NULL,                /* Task handle to keep track of created task */
+        1);                  /* CoreID */
 
 }

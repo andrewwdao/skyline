@@ -15,35 +15,15 @@
 #include "esp_system.h"
 #include "esp_log.h"
 
-
-#ifdef DEBUG // Define actual debug output functions when necessary.
-  // #ifndef DEBUG_BEGIN()
-  //   #define DEBUG_BEGIN()      {Serial.begin(115200);}
-  // #endif
-  #define D_PRINT(...)       {printf(__VA_ARGS__);}
-  // #define D_PRINTLN(...)     {Serial.println(__VA_ARGS__);}
-  // #define D_PRINTF(...)      {Serial.printf(__VA_ARGS__);}
-#else
-  // #ifndef DEBUG_BEGIN()
-  //   #define DEBUG_BEGIN()  {}
-  // #endif
-  #define D_PRINT(...)   {}
-  // #define D_PRINTLN(...) {}
-  // #define D_PRINTF(...)  {}
-#endif
-
+#define DELAY_MS(...)     {vTaskDelay(__VA_ARGS__/portTICK_RATE_MS);}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 #define HIGH 1
 #define LOW  0
 
-#define DELAY 200
-
 #define CLOSED  '0'
 #define OPENED  '1'
 #define CLOSING '2'
 #define OPENING '3'
-/******** Core 0 declaration ***********************/
-#define STACK   4096 // Stack size of CORE0 Task
 
 #endif //__CONFIG_H

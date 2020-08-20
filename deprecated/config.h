@@ -66,7 +66,7 @@ const char WLAN_SSID[]  PROGMEM = "Test";
 const char WLAN_PASS[]  PROGMEM = "testtest";
 
 /******** interrupt vals **********/
-volatile bool LIMIT_FLAG = false;
+volatile bool STOP_FLAG = false;
 
 
 // HTML & CSS contents which display on web server

@@ -1,4 +1,6 @@
-// HTML & CSS contents which display on web server
+/**
+ * @brief HTML & CSS contents which display on the web server
+ */
 #define HTML_RESPONSE "<html> \
     <head> \
         <title>C&#7917;a Gi&#7871;ng Tr&#7901;i</title> \
@@ -107,7 +109,7 @@
         function toggleState() { \
             if (interv) clearInterval(interv); \
             console.log('inv'); \
-            interv = setInterval(updateState, 1000); \
+            interv = setInterval(updateState, 1800); \
             var xhttp = new XMLHttpRequest(); \
             xhttp.open('GET', 'rotate'); \
             xhttp.send(); \

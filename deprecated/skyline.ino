@@ -9,13 +9,13 @@ WebServer server(80);  // Object of WebServer(HTTP port, 80 is defult)
 /*************************************RAM EXECUTED INTERRUPT **********************************************/
 void IRAM_ATTR open_limit_isr() {
   taskENTER_CRITICAL(&lock);
-  LIMIT_FLAG = true;
+  STOP_FLAG = true;
   D_PRINTLN("Open Limit reached!");
   taskEXIT_CRITICAL(&lock);
 }
 void IRAM_ATTR close_limit_isr() {
   taskENTER_CRITICAL(&lock);
-  LIMIT_FLAG = true;
+  STOP_FLAG = true;
   D_PRINTLN("Close Limit reached!");
   taskEXIT_CRITICAL(&lock);
 }

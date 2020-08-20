@@ -36,9 +36,9 @@ void motor_close() {
     for(;;){
       dutyCycle=(dutyCycle<255)?(dutyCycle+1):(dutyCycle);
       ledcWrite(CHANNEL, dutyCycle);// changing the PWM duty cycle
-      if (LIMIT_FLAG) {
+      if (STOP_FLAG) {
         GATE_STATE == CLOSED;
-        LIMIT_FLAG = false;
+        STOP_FLAG = false;
         motor_stop();
         return;
       }
@@ -62,9 +62,9 @@ void motor_open() {
     for(;;){
       dutyCycle=(dutyCycle<255)?(dutyCycle+1):(dutyCycle);
       ledcWrite(CHANNEL, dutyCycle);// changing the PWM duty cycle
-      if (LIMIT_FLAG) {
+      if (STOP_FLAG) {
         GATE_STATE == OPENED;
-        LIMIT_FLAG = false;
+        STOP_FLAG = false;
         motor_stop();
         return;
       }

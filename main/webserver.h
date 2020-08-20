@@ -41,6 +41,6 @@ httpd_handle_t start_webserver(void);
 void           stop_webserver(httpd_handle_t);
 // ------ Public variable -------------------------------------
 // extern SemaphoreHandle_t baton;
-extern volatile char GATE_STATE;
+extern char GATE_STATE;
 
 #endif

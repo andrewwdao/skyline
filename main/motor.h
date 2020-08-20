@@ -49,6 +49,6 @@ void motor_task(void *);
 
 // ------ Public variable -------------------------------------
 extern SemaphoreHandle_t baton;
-extern volatile char GATE_STATE;
+extern char GATE_STATE;
 
 #endif

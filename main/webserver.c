@@ -115,43 +115,6 @@ static void register_basic_handlers(httpd_handle_t hd)
     ESP_LOGI(TAG, "Success");
 }
 
-/**
- * @brief start the httpd service
- */
-static httpd_handle_t my_httpd_start(void)
-{
-    pre_start_mem = esp_get_free_heap_size();
-    httpd_handle_t hd;
-    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    /* Modify this setting to match the number of URI handlers */
-    config.max_uri_handlers  = 5;
-    config.server_port = 7497;
-
-    /* This check should be a part of http_server */
-    config.max_open_sockets = (CONFIG_LWIP_MAX_SOCKETS - 3);
-
-    if (httpd_start(&hd, &config) == ESP_OK) {
-        ESP_LOGI(TAG, "Started HTTP server on port: '%d'", config.server_port);
-        ESP_LOGI(TAG, "Max URI handlers: '%d'", config.max_uri_handlers);
-        ESP_LOGI(TAG, "Max Open Sessions: '%d'", config.max_open_sockets);
-        ESP_LOGI(TAG, "Max Header Length: '%d'", HTTPD_MAX_REQ_HDR_LEN);
-        ESP_LOGI(TAG, "Max URI Length: '%d'", HTTPD_MAX_URI_LEN);
-        ESP_LOGI(TAG, "Max Stack Size: '%d'", config.stack_size);
-        return hd;
-    }
-    return NULL;
-}
-
-/**
- * @brief stop the httpd service
- */
-static void my_httpd_stop(httpd_handle_t hd)
-{
-    httpd_stop(hd);
-    post_stop_mem = esp_get_free_heap_size();
-    ESP_LOGI(TAG, "HTTPD Stopped: Current free memory: %d", post_stop_mem);
-}
-
 /*init wifi as sta and set power save mode*/
 void wifiSTA_init(void)
 {
@@ -161,6 +124,15 @@ void wifiSTA_init(void)
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
     assert(sta_netif);
+
+    //set static ip - https://esp32.com/viewtopic.php?f=2&t=14689
+    esp_netif_dhcpc_stop(sta_netif);
+    esp_netif_ip_info_t ip_info;
+    IP4_ADDR(&ip_info.ip, 192, 168, 1, 174);
+   	IP4_ADDR(&ip_info.gw, 192, 168, 1, 1);
+   	IP4_ADDR(&ip_info.netmask, 255, 255, 255, 0);
+
+    esp_netif_set_ip_info(sta_netif, &ip_info);
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
@@ -209,6 +181,43 @@ void wifiSTA_init(void)
 #endif // CONFIG_PM_ENABLE
 
     esp_wifi_set_ps(PS_MODE);
+}
+
+/**
+ * @brief start the httpd service
+ */
+static httpd_handle_t my_httpd_start(void)
+{
+    pre_start_mem = esp_get_free_heap_size();
+    httpd_handle_t hd;
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    /* Modify this setting to match the number of URI handlers */
+    config.max_uri_handlers  = 5;
+    config.server_port = 7497;
+
+    /* This check should be a part of http_server */
+    config.max_open_sockets = (CONFIG_LWIP_MAX_SOCKETS - 3);
+
+    if (httpd_start(&hd, &config) == ESP_OK) {
+        ESP_LOGI(TAG, "Started HTTP server on port: '%d'", config.server_port);
+        ESP_LOGI(TAG, "Max URI handlers: '%d'", config.max_uri_handlers);
+        ESP_LOGI(TAG, "Max Open Sessions: '%d'", config.max_open_sockets);
+        ESP_LOGI(TAG, "Max Header Length: '%d'", HTTPD_MAX_REQ_HDR_LEN);
+        ESP_LOGI(TAG, "Max URI Length: '%d'", HTTPD_MAX_URI_LEN);
+        ESP_LOGI(TAG, "Max Stack Size: '%d'", config.stack_size);
+        return hd;
+    }
+    return NULL;
+}
+
+/**
+ * @brief stop the httpd service
+ */
+static void my_httpd_stop(httpd_handle_t hd)
+{
+    httpd_stop(hd);
+    post_stop_mem = esp_get_free_heap_size();
+    ESP_LOGI(TAG, "HTTPD Stopped: Current free memory: %d", post_stop_mem);
 }
 
 /**

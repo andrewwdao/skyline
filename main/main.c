@@ -22,7 +22,7 @@
 TaskHandle_t TaskSub;
 SemaphoreHandle_t baton;
 
-volatile char GATE_STATE = OPENED;
+char GATE_STATE = OPENED;
 
 /** @brief tag used for ESP serial console messages */
 static const char TAG[] = "MAIN";

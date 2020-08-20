@@ -9,7 +9,7 @@
 #ifndef __WEBSERVER_C
 #define __WEBSERVER_C
 #include "webserver.h"
-#include "my_html.h"
+// #include "my_html.h"
 // ------ Private constants -----------------------------------
 
 // ------ Private function prototypes -------------------------
@@ -19,7 +19,15 @@ static void           my_httpd_stop(httpd_handle_t);
 // ------ Private variables -----------------------------------
 static const char *TAG = "webserver";
 static int pre_start_mem, post_stop_mem;
-
+/**
+ * @brief html code imported from cmake
+ * @ref https://docs.espressif.com/projects/esp-idf/en/release-v4.2/esp32/api-guides/build-system.html#embedding-binary-data
+ * @ref https://esp32.com/viewtopic.php?t=11219
+ */
+extern const char skyline_html_start[] asm("_binary_skyline_html_start");
+extern const char skyline_html_end[]   asm("_binary_skyline_html_end");
+extern const char favicon_png_start[]  asm("_binary_favicon_png_start");
+extern const char favicon_png_end[]    asm("_binary_favicon_png_end");
 // ------ PUBLIC variable definitions -------------------------
 
 //--------------------------------------------------------------
@@ -49,7 +57,19 @@ static esp_err_t control_get_handler(httpd_req_t *req)
     ESP_LOGI(TAG, "Serving page /ctl");
     httpd_resp_set_status(req, HTTPD_200); // 200 OK
 	httpd_resp_set_type(req, HTTPD_TYPE_TEXT); //"text/html"
-    httpd_resp_send(req, HTML_RESPONSE, strlen(HTML_RESPONSE));
+    httpd_resp_send(req, skyline_html_start, skyline_html_end-skyline_html_start);
+    return ESP_OK;
+}
+
+/**
+ * @brief handler for /icon - for the purpose of getting the favicon
+ */
+static esp_err_t favicon_get_handler(httpd_req_t *req)
+{
+    ESP_LOGI(TAG, "Serving /favicon.png");
+    httpd_resp_set_status(req, HTTPD_200); // 200 OK
+	httpd_resp_set_type(req, "image/png");
+    httpd_resp_send(req, favicon_png_start, favicon_png_end-favicon_png_start);
     return ESP_OK;
 }
 
@@ -93,6 +113,11 @@ static const httpd_uri_t basic_handlers[] = {
     { .uri      = "/ctl",
       .method   = HTTP_GET,
       .handler  = control_get_handler,
+      .user_ctx = NULL,
+    },
+    { .uri      = "/favicon.png",
+      .method   = HTTP_GET,
+      .handler  = favicon_get_handler,
       .user_ctx = NULL,
     },
     { .uri      = "/get_state",

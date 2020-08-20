@@ -1,2 +1,4 @@
 idf_component_register(SRCS "main.c" "motor.c" "webserver.c"
-                    INCLUDE_DIRS ".")
+					   INCLUDE_DIRS "."
+					   EMBED_FILES static/favicon.png
+					   EMBED_TXTFILES template/skyline.html)

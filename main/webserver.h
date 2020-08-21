@@ -9,10 +9,11 @@
 #ifndef __WEBSERVER_H
 #define __WEBSERVER_H
 #include "config.h"
-#include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_pm.h"
 #include "nvs_flash.h"
+#include <sys/param.h>
+
 #include <esp_http_server.h>
 
 // ------ Public constants ------------------------------------

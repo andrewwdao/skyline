@@ -63,7 +63,7 @@ void monitoring_task(void *arg)
  */
 void app_main(void)
 {
-    // --------Initialize NVS - must have -------
+    // --------Initialize NVS - must have on main task -------
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
@@ -92,7 +92,6 @@ void app_main(void)
                                                WIFI_EVENT_STA_DISCONNECTED,
                                                &disconnect_handler, &server));
 
-    /* Start the server for the first time */
     server = start_webserver();
 
     //------------ monitoring task -----------------

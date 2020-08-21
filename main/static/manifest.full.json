@@ -1,0 +1,16 @@
+{
+  "short_name": "Cửa Giếng Trời",
+  "name": "Cửa Giếng Trời",
+  "icons": [
+    {
+      "src": "http://192.168.1.174:7497/favicon.png",
+      "sizes": "36x36",
+      "type": "image/png",
+      "density": "0.75"
+     }
+  ],
+  "start_url": "http://192.168.1.174:7497/ctl",
+  "background_color": "#fff",
+  "theme_color": "#fff",
+  "display": "standalone"
+}

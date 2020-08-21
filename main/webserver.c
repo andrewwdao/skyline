@@ -1,10 +1,13 @@
-/*------------------------------------------------------------*-
+/** ------------------------------------------------------------*-
   Webserver - header file
   (c) Minh-An Dao - Anh Khoi Tran 2020
   version 1.00 - 20/08/2020
 ---------------------------------------------------------------
  * Init Wifi and create local webserver
  * 
+ * @note html code and external files imported from cmake
+ * @ref https://docs.espressif.com/projects/esp-idf/en/release-v4.2/esp32/api-guides/build-system.html#embedding-binary-data
+ * @ref https://esp32.com/viewtopic.php?t=11219
  --------------------------------------------------------------*/
 #ifndef __WEBSERVER_C
 #define __WEBSERVER_C
@@ -13,21 +16,11 @@
 // ------ Private constants -----------------------------------
 
 // ------ Private function prototypes -------------------------
-static void           wifiSTA_handler(void*, esp_event_base_t, int32_t, void*);
-static httpd_handle_t my_httpd_start(void);
-static void           my_httpd_stop(httpd_handle_t);
+
 // ------ Private variables -----------------------------------
+/** @brief tag used for ESP serial console messages */
 static const char *TAG = "webserver";
-static int pre_start_mem, post_stop_mem;
-/**
- * @brief html code imported from cmake
- * @ref https://docs.espressif.com/projects/esp-idf/en/release-v4.2/esp32/api-guides/build-system.html#embedding-binary-data
- * @ref https://esp32.com/viewtopic.php?t=11219
- */
-extern const char skyline_html_start[] asm("_binary_skyline_html_start");
-extern const char skyline_html_end[]   asm("_binary_skyline_html_end");
-extern const char favicon_png_start[]  asm("_binary_favicon_png_start");
-extern const char favicon_png_end[]    asm("_binary_favicon_png_end");
+
 // ------ PUBLIC variable definitions -------------------------
 
 //--------------------------------------------------------------
@@ -55,9 +48,11 @@ static void wifiSTA_handler(void* arg, esp_event_base_t event_base,
 static esp_err_t control_get_handler(httpd_req_t *req)
 {
     ESP_LOGI(TAG, "Serving page /ctl");
-    httpd_resp_set_status(req, HTTPD_200); // 200 OK
+    // httpd_resp_set_status(req, HTTPD_200); // 200 OK
+    extern const char skyline_html_start[] asm("_binary_skyline_html_start");
+    extern const char skyline_html_end[]   asm("_binary_skyline_html_end");
 	httpd_resp_set_type(req, HTTPD_TYPE_TEXT); //"text/html"
-    httpd_resp_send(req, skyline_html_start, skyline_html_end-skyline_html_start);
+    httpd_resp_send(req, skyline_html_start, skyline_html_end-skyline_html_start-1);
     return ESP_OK;
 }
 
@@ -67,9 +62,25 @@ static esp_err_t control_get_handler(httpd_req_t *req)
 static esp_err_t favicon_get_handler(httpd_req_t *req)
 {
     ESP_LOGI(TAG, "Serving /favicon.png");
-    httpd_resp_set_status(req, HTTPD_200); // 200 OK
+    // httpd_resp_set_status(req, HTTPD_200); // 200 OK
+    extern const char favicon_png_start[]  asm("_binary_favicon_png_start");
+    extern const char favicon_png_end[]    asm("_binary_favicon_png_end");
 	httpd_resp_set_type(req, "image/png");
-    httpd_resp_send(req, favicon_png_start, favicon_png_end-favicon_png_start);
+    httpd_resp_send(req, favicon_png_start, favicon_png_end-favicon_png_start-1);
+    return ESP_OK;
+}
+
+/**
+ * @brief handler for /manifest.json - for the purpose of getting the webapp
+ */
+static esp_err_t manifest_get_handler(httpd_req_t *req)
+{
+    ESP_LOGI(TAG, "Serving /manifest.json");
+    // httpd_resp_set_status(req, HTTPD_200); // 200 OK
+    extern const char manifest_json_start[] asm("_binary_manifest_json_start");
+    extern const char manifest_json_end[]   asm("_binary_manifest_json_end");
+	httpd_resp_set_type(req, HTTPD_TYPE_JSON);
+    httpd_resp_send(req, manifest_json_start, manifest_json_end-manifest_json_start-1);
     return ESP_OK;
 }
 
@@ -79,7 +90,7 @@ static esp_err_t favicon_get_handler(httpd_req_t *req)
 static esp_err_t getstate_get_handler(httpd_req_t *req)
 {
     ESP_LOGI(TAG, "Serving page /get_state");
-    httpd_resp_set_status(req, HTTPD_200); // 200 OK
+    // httpd_resp_set_status(req, HTTPD_200); // 200 OK
 	httpd_resp_set_type(req, HTTPD_TYPE_JSON); // "application/json"
     httpd_resp_send(req, &GATE_STATE, 1);
     return ESP_OK;
@@ -102,7 +113,7 @@ static esp_err_t rotate_get_handler(httpd_req_t *req)
         STOP_FLAG = true;
         GATE_STATE = CLOSED;
     }
-    httpd_resp_set_status(req, HTTPD_200); // 200 OK
+    // httpd_resp_set_status(req, HTTPD_200); // 200 OK
 	httpd_resp_set_type(req, HTTPD_TYPE_JSON); // "application/json"
     httpd_resp_send(req, &GATE_STATE, 1);
     return ESP_OK;
@@ -120,6 +131,11 @@ static const httpd_uri_t basic_handlers[] = {
       .handler  = favicon_get_handler,
       .user_ctx = NULL,
     },
+    { .uri      = "/manifest.json",
+      .method   = HTTP_GET,
+      .handler  = manifest_get_handler,
+      .user_ctx = NULL,
+    },
     { .uri      = "/get_state",
       .method   = HTTP_GET,
       .handler  = getstate_get_handler,
@@ -131,22 +147,9 @@ static const httpd_uri_t basic_handlers[] = {
       .user_ctx = NULL,
     }
 };
+
 static const int basic_handlers_no = sizeof(basic_handlers)/sizeof(httpd_uri_t);
 ////////////////////////////////////////////////////////////////////////////////
-
-static void register_basic_handlers(httpd_handle_t hd)
-{
-    int i;
-    ESP_LOGI(TAG, "Registering basic handlers...");
-    ESP_LOGI(TAG, "No of handlers = %d", basic_handlers_no);
-    for (i = 0; i < basic_handlers_no; i++) {
-        if (httpd_register_uri_handler(hd, &basic_handlers[i]) != ESP_OK) {
-            ESP_LOGW(TAG, "register uri failed for %d", i);
-            return;
-        }
-    }
-    ESP_LOGI(TAG, "Done");
-}
 
 /**
  * @brief init wifi as sta and set power save mode
@@ -163,8 +166,8 @@ void wifiSTA_init(void)
     //set static ip - https://esp32.com/viewtopic.php?f=2&t=14689
     esp_netif_dhcpc_stop(sta_netif);
     esp_netif_ip_info_t ip_info;
-    IP4_ADDR(&ip_info.ip, 192, 168, 1, 174);
-   	IP4_ADDR(&ip_info.gw, 192, 168, 1, 1);
+    IP4_ADDR(&ip_info.ip, 192, 168, 43, 174);
+   	IP4_ADDR(&ip_info.gw, 192, 168, 43, 1);
    	IP4_ADDR(&ip_info.netmask, 255, 255, 255, 0);
 
     esp_netif_set_ip_info(sta_netif, &ip_info);
@@ -219,61 +222,51 @@ void wifiSTA_init(void)
 }
 
 /**
- * @brief start the httpd service
+ * @brief start the local Webserver and start the httpd service
  */
-static httpd_handle_t my_httpd_start(void)
+httpd_handle_t start_webserver(void)
 {
-    pre_start_mem = esp_get_free_heap_size();
-    httpd_handle_t hd;
-    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    /* Modify this setting to match the number of URI handlers */
-    config.max_uri_handlers  = 5;
-    config.server_port = 7497;
+    httpd_handle_t sv;
+    httpd_config_t conf = HTTPD_DEFAULT_CONFIG();
+    /** @note Modify this setting to match the number of URI handlers */
+    conf.max_uri_handlers  = 9;
+    conf.server_port = 7497;
 
     /* This check should be a part of http_server */
-    config.max_open_sockets = (CONFIG_LWIP_MAX_SOCKETS - 3);
+    conf.max_open_sockets = (CONFIG_LWIP_MAX_SOCKETS - 3);
 
-    if (httpd_start(&hd, &config) == ESP_OK) {
-        ESP_LOGI(TAG, "Started HTTP server on port: '%d'", config.server_port);
-        ESP_LOGI(TAG, "Max URI handlers: '%d'", config.max_uri_handlers);
-        ESP_LOGI(TAG, "Max Open Sessions: '%d'", config.max_open_sockets);
+    if (httpd_start(&sv, &conf) == ESP_OK) {
+        ESP_LOGI(TAG, "Started HTTP server on port: '%d'", conf.server_port);
+        ESP_LOGI(TAG, "Max URI handlers: '%d'", conf.max_uri_handlers);
+        ESP_LOGI(TAG, "Max Open Sessions: '%d'", conf.max_open_sockets);
         ESP_LOGI(TAG, "Max Header Length: '%d'", HTTPD_MAX_REQ_HDR_LEN);
         ESP_LOGI(TAG, "Max URI Length: '%d'", HTTPD_MAX_URI_LEN);
-        ESP_LOGI(TAG, "Max Stack Size: '%d'", config.stack_size);
-        return hd;
+        ESP_LOGI(TAG, "Max Stack Size: '%d'", conf.stack_size);
+        
+        // ------------------- register basic handlers ------------------
+        ESP_LOGI(TAG, "Registering %d URI handlers...", basic_handlers_no);
+        for (int i = 0; i < basic_handlers_no; i++) {
+            if (httpd_register_uri_handler(sv, &basic_handlers[i]) != ESP_OK) {
+                ESP_LOGW(TAG, "register failed for %d", i);
+                return NULL;
+            }
+        }
+        ESP_LOGI(TAG, "Done");
+        //---------------------------------------------------------------
+        return sv;
     }
+    ESP_LOGW(TAG, "Error starting server!");
     return NULL;
 }
 
 /**
- * @brief stop the httpd service
+ * @brief stop the local Webserver by stopping the httpd service
  */
-static void my_httpd_stop(httpd_handle_t hd)
-{
-    httpd_stop(hd);
-    post_stop_mem = esp_get_free_heap_size();
-    ESP_LOGI(TAG, "HTTPD Stopped: Current free memory: %d", post_stop_mem);
-}
-
-/**
- * @brief start the local Webserver
- */
-httpd_handle_t start_webserver(void)
-{
-    httpd_handle_t hd = my_httpd_start();
-    if (hd) {
-        register_basic_handlers(hd);
-    }
-    return hd;
-}
-
-/**
- * @brief stop the local Webserver
- */
-void stop_webserver(httpd_handle_t hd)
+void stop_webserver(httpd_handle_t sv)
 {
     ESP_LOGI(TAG, "Stopping httpd...");
-    my_httpd_stop(hd);
+    httpd_stop(sv);
+    ESP_LOGI(TAG, "HTTPD Stopped: Current free memory: %d", esp_get_free_heap_size());
 }
 
 #endif

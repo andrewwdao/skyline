@@ -47,26 +47,11 @@ static void wifiSTA_handler(void* arg, esp_event_base_t event_base,
  */
 static esp_err_t control_get_handler(httpd_req_t *req)
 {
-    ESP_LOGI(TAG, "Serving page /ctl");
-    // httpd_resp_set_status(req, HTTPD_200); // 200 OK
+    ESP_LOGI(TAG, "Serving /ctl");
     extern const char skyline_html_start[] asm("_binary_skyline_html_start");
     extern const char skyline_html_end[]   asm("_binary_skyline_html_end");
 	httpd_resp_set_type(req, HTTPD_TYPE_TEXT); //"text/html"
     httpd_resp_send(req, skyline_html_start, skyline_html_end-skyline_html_start-1);
-    return ESP_OK;
-}
-
-/**
- * @brief handler for /icon - for the purpose of getting the favicon
- */
-static esp_err_t favicon_get_handler(httpd_req_t *req)
-{
-    ESP_LOGI(TAG, "Serving /favicon.png");
-    // httpd_resp_set_status(req, HTTPD_200); // 200 OK
-    extern const char favicon_png_start[]  asm("_binary_favicon_png_start");
-    extern const char favicon_png_end[]    asm("_binary_favicon_png_end");
-	httpd_resp_set_type(req, "image/png");
-    httpd_resp_send(req, favicon_png_start, favicon_png_end-favicon_png_start-1);
     return ESP_OK;
 }
 
@@ -76,7 +61,6 @@ static esp_err_t favicon_get_handler(httpd_req_t *req)
 static esp_err_t manifest_get_handler(httpd_req_t *req)
 {
     ESP_LOGI(TAG, "Serving /manifest.json");
-    // httpd_resp_set_status(req, HTTPD_200); // 200 OK
     extern const char manifest_json_start[] asm("_binary_manifest_json_start");
     extern const char manifest_json_end[]   asm("_binary_manifest_json_end");
 	httpd_resp_set_type(req, HTTPD_TYPE_JSON);
@@ -89,8 +73,7 @@ static esp_err_t manifest_get_handler(httpd_req_t *req)
  */
 static esp_err_t getstate_get_handler(httpd_req_t *req)
 {
-    ESP_LOGI(TAG, "Serving page /get_state");
-    // httpd_resp_set_status(req, HTTPD_200); // 200 OK
+    ESP_LOGI(TAG, "Serving /get_state");
 	httpd_resp_set_type(req, HTTPD_TYPE_JSON); // "application/json"
     httpd_resp_send(req, &GATE_STATE, 1);
     return ESP_OK;
@@ -101,7 +84,7 @@ static esp_err_t getstate_get_handler(httpd_req_t *req)
  */
 static esp_err_t rotate_get_handler(httpd_req_t *req)
 {
-    ESP_LOGI(TAG, "Serving page /rotate");
+    ESP_LOGI(TAG, "Serving /rotate");
     if (GATE_STATE == CLOSED) {
         GATE_STATE = OPENING;
     } else if (GATE_STATE == OPENED) {
@@ -113,7 +96,6 @@ static esp_err_t rotate_get_handler(httpd_req_t *req)
         STOP_FLAG = true;
         GATE_STATE = CLOSED;
     }
-    // httpd_resp_set_status(req, HTTPD_200); // 200 OK
 	httpd_resp_set_type(req, HTTPD_TYPE_JSON); // "application/json"
     httpd_resp_send(req, &GATE_STATE, 1);
     return ESP_OK;
@@ -124,11 +106,6 @@ static const httpd_uri_t basic_handlers[] = {
     { .uri      = "/ctl",
       .method   = HTTP_GET,
       .handler  = control_get_handler,
-      .user_ctx = NULL,
-    },
-    { .uri      = "/favicon.png",
-      .method   = HTTP_GET,
-      .handler  = favicon_get_handler,
       .user_ctx = NULL,
     },
     { .uri      = "/manifest.json",
@@ -229,7 +206,7 @@ httpd_handle_t start_webserver(void)
     httpd_handle_t sv;
     httpd_config_t conf = HTTPD_DEFAULT_CONFIG();
     /** @note Modify this setting to match the number of URI handlers */
-    conf.max_uri_handlers  = 9;
+    conf.max_uri_handlers  = 4;
     conf.server_port = 7497;
 
     /* This check should be a part of http_server */

@@ -48,31 +48,31 @@ static void motor_isr_task(void* arg)
     for(;;) {
         if(xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
           //ESP_LOGW(TAG, "GPIO[%d] intr, val: %d\n", io_num, gpio_get_level(io_num));
-          if (io_num==OPEN_LIMIT_PIN) {
+          if ((io_num==OPEN_LIMIT_PIN)&&(!gpio_get_level(OPEN_LIMIT_PIN))) {
             GATE_STATE = OPENED;
             STOP_FLAG = true;
             ESP_LOGW(TAG, "OPEN LIMIT isr!\n");
           }
-          if (io_num==CLOSE_LIMIT_PIN) {
+          if ((io_num==CLOSE_LIMIT_PIN)&&(!gpio_get_level(CLOSE_LIMIT_PIN))) {
             GATE_STATE = CLOSED;
             STOP_FLAG = true;
             ESP_LOGW(TAG, "CLOSE LIMIT isr!\n");
           }
-          if (io_num==STOP_DOOR_PIN) {
+          if ((io_num==STOP_DOOR_PIN)&&(!gpio_get_level(STOP_DOOR_PIN))) {
             if (GATE_STATE == CLOSING) {GATE_STATE = OPENED;}
             else if (GATE_STATE == OPENING) {GATE_STATE = CLOSED;}
             STOP_FLAG = true;
             ESP_LOGW(TAG, "STOP isr!\n");
           }
-          if (io_num==OPEN_DOOR_PIN) {
+          if ((io_num==OPEN_DOOR_PIN)&&(!gpio_get_level(OPEN_DOOR_PIN))) {
             GATE_STATE = OPENING;
             ESP_LOGW(TAG, "OPEN isr!\n");
           }
-          if (io_num==CLOSE_DOOR_PIN) {
+          if ((io_num==CLOSE_DOOR_PIN)&&(!gpio_get_level(CLOSE_DOOR_PIN))) {
             GATE_STATE = CLOSING;
             ESP_LOGW(TAG, "CLOSE isr!\n");
           }
-          DELAY_MS(500);
+          DELAY_MS(10);
         }
     }
 }

@@ -50,13 +50,13 @@ static void connect_handler(void* arg, esp_event_base_t event_base,
  * @brief RTOS task that periodically prints the heap memory available.
  * @note Pure debug information, should not be ever started on production code! This is an example on how you can integrate your code with wifi-manager
  */
-void monitoring_task(void *arg)
-{
-	for(;;){
-		ESP_LOGI(TAG, "free heap: %d\n",esp_get_free_heap_size());
-		vTaskDelay(pdMS_TO_TICKS(10000));
-	}
-}
+// void monitoring_task(void *arg)
+// {
+// 	for(;;){
+// 		ESP_LOGI(TAG, "free heap: %d\n",esp_get_free_heap_size());
+// 		vTaskDelay(pdMS_TO_TICKS(10000));
+// 	}
+// }
 
 /**
  * @brief main app
@@ -96,13 +96,13 @@ void app_main(void)
 
     //------------ monitoring task -----------------
     //A task on core 2 that monitors free heap memory - should be removed on production
-    xTaskCreatePinnedToCore(
-        &monitoring_task,    /* Task Function */
-        "monitoring_task",   /* Name of Task */
-        2048,                /* Stack size of Task */
-        NULL,                /* Parameter of the task */
-        1,                   /* Priority of the task, vary from 0 to N, bigger means higher piority, need to be 0 to be lower than the watchdog*/
-        NULL,                /* Task handle to keep track of created task */
-        1);                  /* CoreID */
+    // xTaskCreatePinnedToCore(
+    //     &monitoring_task,    /* Task Function */
+    //     "monitoring_task",   /* Name of Task */
+    //     2048,                /* Stack size of Task */
+    //     NULL,                /* Parameter of the task */
+    //     1,                   /* Priority of the task, vary from 0 to N, bigger means higher piority, need to be 0 to be lower than the watchdog*/
+    //     NULL,                /* Task handle to keep track of created task */
+    //     1);                  /* CoreID */
 
 }

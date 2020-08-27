@@ -1,5 +1,17 @@
 menu "Skyline Window Configuration"
 
+    config MAX_SPEED
+        int "Motor speed"
+        default 128
+        help
+            Duty cycle that control the motor speed. Range from 0-255. 
+
+    config LIMIT_INTERVAL
+        int "Maximum operation Interval (ms)"
+        default 10000
+        help
+            Maximum operation interval for motor (in ms).
+
     config WIFI_SSID
         string "WiFi SSID"
         default "myssid"

@@ -11,36 +11,36 @@
         <meta name="theme-color" content="#ffffff">
         <style>
         * { font-family: Arial; }
-        #btn {
-            color: white;
-            width:33vw;
-            height: 20vh;
-            background-color: #33c930;
-            font-size: 200%;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%,-50%);
-            border-radius: 10px;
-            border: 0;
-            outline: 0;
-            transition: .05s;
-            font-weight: bold;
+        #state {
+            margin: 20px;
             text-align: center;
-            min-width: 250px;
+            font-size: 140%;
         }
-        #btn:active {
+        #btn-group {
+            text-align: center;
+            padding-top: 23vh;
+        }
+        .btn {
+            border-radius: 20px;
+            outline: 0;
+            border: 0;
+            padding: 40px 20px;
+            font-size: 140%;
+            width: 30%;
+            max-width: 300px;
+            color: white;
+            font-weight: bold;
+        }
+        .btn.close { background-color: #4bad49;}
+        .btn.stop {background-color: #de3737;}
+        .btn.open {background-color: #4bad49;}
+        .btn:active {
             background-color: brown;
-            font-size: 180%;
-            width: 32vw;
-            height: 19vh;
         }
-        #btn.close { background-color: #db2323;}
-        #btn.closing {background-color: #9c0b0b;}
-        #btn.opening {background-color: #0c8c0a;}
         body { background-color: #fff;}
         #header {
-            margin-top: 7%;
+            margin-top: 20px;
+            margin-top: min(40px, 2%);
             text-align: center;
             font-size: 360%;
         }
@@ -110,6 +110,37 @@
         #credit-btn:active {
             background-color: grey;
         }
+
+        @media only screen and (max-width: 600px) {
+            .word-group {
+                display: block;
+            }
+            #btn-group {
+                padding-top: 8vh;
+            }
+            .btn {
+                display: block;
+                position: relative;
+                left: 50%;
+                transform: translate(-50%, 0);
+                margin-top: 10px;
+                width: 50vw;
+                padding: 30px 20px;
+            }
+        }
+        @media only screen and (max-height: 600px){
+            .btn {
+                padding: 30px 20px;
+            }
+            #btn-group {
+                padding-top: 13vh;
+            }
+            @media only screen and (max-width: 600px) {
+                #btn-group {
+                    padding-top: 2vh;
+                }
+            }
+        }
     </style>
     <script>
         var interv = setInterval(updateState, 500);
@@ -123,9 +154,10 @@
                 console.log("ON");
             }
         });
-        function toggleState() {
+        function rotate(mode) {
             var xhttp = new XMLHttpRequest();
             xhttp.open('GET', 'rotate');
+            xhttp.setRequestHeader("mode", mode);
             xhttp.send();
         }
         function updateState() {
@@ -133,19 +165,19 @@
             xhttp.onreadystatechange = function() {
                 if (this.readyState == 4 && this.status == 200) {
                     console.log(this.responseText);
-                    var button = document.getElementById('btn');
+                    var stateHeader = document.getElementById('state');
                     if (this.responseText === '0') {
-                        button.innerHTML = 'M&#7903; c&#7917;a';
-                        button.className = 'open';
+                        stateHeader.innerHTML = 'C&#7917;a M&#7903;';
+                        stateHeader.className = 'open';
                     } else if (this.responseText === '1') {
-                        button.innerHTML = '&#272;&#243;ng c&#7917;a';
-                        button.className = 'close';
+                        stateHeader.innerHTML = 'C&#7917;a &#272;&#243;ng';
+                        stateHeader.className = 'close';
                     } else if (this.responseText === '2') {
-                        button.innerHTML = 'C&#7917;a &#273;ang &#273;&#243;ng...';
-                        button.className = 'closing';
+                        stateHeader.innerHTML = 'C&#7917;a &#273;ang &#273;&#243;ng...';
+                        stateHeader.className = 'closing';
                     } else if (this.responseText === '3') {
-                        button.innerHTML = 'C&#7917;a &#273;ang m&#7903;...';
-                        button.className = 'opening';
+                        stateHeader.innerHTML = 'C&#7917;a &#273;ang m&#7903;...';
+                        stateHeader.className = 'opening';
                     }
                 }
             };
@@ -158,8 +190,13 @@
     </script>
 </head>
 <body>
-    <div id="header">C&#7917;a Gi&#7871;ng Tr&#7901;i</div>
-    <button id="btn" onclick="toggleState()" class="close">Kh&#244;ng c&#243; k&#7871;t n&#7889;i</button>
+    <div id="header">C&#7917;a <span class="word-group">Gi&#7871;ng Tr&#7901;i</span></div>
+    <div id="state">Kh&#244;ng c&#243; k&#7871;t n&#7889;i</div>
+    <div id="btn-group">
+        <button class="btn close" onclick="rotate('c')">&#272;&#243;ng c&#7917;a</button>
+        <button class="btn stop" onclick="rotate('s')">D&#7915;ng</button>
+        <button class="btn open" onclick="rotate('o')">M&#7903; c&#7917;a</button>
+    </div>
     <div onclick="toggleCredit()" id="footer"><b><u>&copy; 2020, MIS-CTU team.</b></u></div>
     <div id="credit-pannel">
         <h1 id="credit-header">Skyline Window</h1>

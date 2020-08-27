@@ -40,7 +40,8 @@
 /**************** parameters define *********************/
 // setting PWM properties
 #define FREQ    10000
-
+#define MAX_SPEED CONFIG_MAX_SPEED
+#define LIMIT_INTERVAL_MS CONFIG_LIMIT_INTERVAL
 // ------ Public function prototypes --------------------------
 void motor_task(void *);
 

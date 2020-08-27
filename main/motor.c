@@ -49,13 +49,13 @@ static void motor_isr_task(void* arg)
         if(xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
           //ESP_LOGW(TAG, "GPIO[%d] intr, val: %d\n", io_num, gpio_get_level(io_num));
           if ((io_num==OPEN_LIMIT_PIN)&&(!gpio_get_level(OPEN_LIMIT_PIN))) {
-            GATE_STATE = OPENED;
             STOP_FLAG = true;
+            GATE_STATE = OPENED;
             ESP_LOGW(TAG, "OPEN LIMIT isr!\n");
           }
           if ((io_num==CLOSE_LIMIT_PIN)&&(!gpio_get_level(CLOSE_LIMIT_PIN))) {
-            GATE_STATE = CLOSED;
             STOP_FLAG = true;
+            GATE_STATE = CLOSED;
             ESP_LOGW(TAG, "CLOSE LIMIT isr!\n");
           }
           if ((io_num==STOP_DOOR_PIN)&&(!gpio_get_level(STOP_DOOR_PIN))) {
@@ -168,7 +168,6 @@ static void motor_stop(void)
     mcpwm_set_signal_low(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A);
     ESP_LOGW(TAG, "Motor stopped\n");
   }
-  
   DELAY_MS(100);
 }
 
@@ -184,12 +183,14 @@ static void motor_open(void)
       gpio_set_level(INB_PIN, HIGH);
       gpio_set_level(EN_PIN, HIGH);
       
-      int dutyCycle=0;
+      int dutyCycle=20;
+      int64_t millis = esp_timer_get_time();
       for(;;) {
-      dutyCycle=(dutyCycle<255)?(dutyCycle+1):(dutyCycle);
+      dutyCycle=(dutyCycle<MAX_SPEED)?(dutyCycle+1):(dutyCycle);
       mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, dutyCycle);
       mcpwm_set_duty_type(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, MCPWM_DUTY_MODE_0); //call this each time, if operator was previously in low/high state
-      if (STOP_FLAG) {
+
+      if (STOP_FLAG | ((esp_timer_get_time()-millis)>LIMIT_INTERVAL_MS)) {
             STOP_FLAG = false;
             motor_stop();
             return;
@@ -215,14 +216,15 @@ static void motor_close(void)
         gpio_set_level(INB_PIN, LOW);
         gpio_set_level(EN_PIN, HIGH);
         
-        int dutyCycle=0;
+        int dutyCycle=20;
+        int64_t millis = esp_timer_get_time();
         for(;;) {
-        dutyCycle=(dutyCycle<255)?(dutyCycle+1):(dutyCycle);
+        dutyCycle=(dutyCycle<MAX_SPEED)?(dutyCycle+1):(dutyCycle);
         // ledcWrite(CHANNEL, dutyCycle);// changing the PWM duty cycle
         mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, dutyCycle);
         mcpwm_set_duty_type(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, MCPWM_DUTY_MODE_0); //call this each time, if operator was previously in low/high state
 
-        if (STOP_FLAG) {
+        if (STOP_FLAG | ((esp_timer_get_time()-millis)>LIMIT_INTERVAL_MS)) {
             STOP_FLAG = false;
             motor_stop();
             return;

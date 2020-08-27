@@ -1,0 +1,13 @@
+# Target labels
+ bootloader
+# Source files and their labels
+D:/Google_Drive/3.Projects/skyline/build/CMakeFiles/bootloader
+D:/Google_Drive/3.Projects/skyline/build/CMakeFiles/bootloader.rule
+D:/Google_Drive/3.Projects/skyline/build/CMakeFiles/bootloader-complete.rule
+D:/Google_Drive/3.Projects/skyline/build/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule
+D:/Google_Drive/3.Projects/skyline/build/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule
+D:/Google_Drive/3.Projects/skyline/build/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule
+D:/Google_Drive/3.Projects/skyline/build/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule
+D:/Google_Drive/3.Projects/skyline/build/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule
+D:/Google_Drive/3.Projects/skyline/build/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule
+D:/Google_Drive/3.Projects/skyline/build/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule

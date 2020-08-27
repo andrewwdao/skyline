@@ -14,7 +14,9 @@
 #include "webserver.h"
 // #include "my_html.h"
 // ------ Private constants -----------------------------------
-
+#define CLOSE_BUTTON 'c'
+#define STOP_BUTTON  's'
+#define OPEN_BUTTON  'o'
 // ------ Private function prototypes -------------------------
 
 // ------ Private variables -----------------------------------
@@ -84,19 +86,41 @@ static esp_err_t getstate_get_handler(httpd_req_t *req)
  */
 static esp_err_t rotate_get_handler(httpd_req_t *req)
 {
-    ESP_LOGI(TAG, "Serving /rotate");
-    if (GATE_STATE == CLOSED) {
-        GATE_STATE = OPENING;
-    } else if (GATE_STATE == OPENED) {
-        GATE_STATE = CLOSING;
-    } else if (GATE_STATE == CLOSING) {
-        STOP_FLAG = true;
-        GATE_STATE = OPENED;
-    } else if (GATE_STATE == OPENING) {
-        STOP_FLAG = true;
-        GATE_STATE = CLOSED;
+	httpd_resp_set_type(req, HTTPD_TYPE_TEXT);
+    int buf_len;
+    char *buf;
+    buf_len = httpd_req_get_hdr_value_len(req, "mode");
+    if (buf_len > 0) {
+        buf = malloc(++buf_len);
+        if (!buf) {
+            ESP_LOGE(TAG, "Failed to allocate memory of %d bytes!", buf_len);
+            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Memory allocation failed");
+            return ESP_ERR_NO_MEM;
+        }
+        /* Copy null terminated value string into buffer */
+        if (httpd_req_get_hdr_value_str(req, "mode", buf, buf_len) == ESP_OK) {
+            ESP_LOGI(TAG, "mode: %s", buf);
+            if (*buf==CLOSE_BUTTON) {
+                GATE_STATE = CLOSING;
+            } else if (*buf==STOP_BUTTON) {
+                STOP_FLAG = true;
+                if (GATE_STATE == CLOSING) {
+                    GATE_STATE = OPENED;
+                } else if (GATE_STATE == OPENING) {
+                    GATE_STATE = CLOSED;
+                }
+            } else if (*buf==OPEN_BUTTON) {
+                GATE_STATE = OPENING;
+            }
+        } else {
+            ESP_LOGE(TAG, "Error in getting value of Header1");
+            httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Error in getting value of Header1");
+            free(buf);
+            return ESP_FAIL;
+        }
+
+        free(buf);
     }
-	httpd_resp_set_type(req, HTTPD_TYPE_JSON); // "application/json"
     httpd_resp_send(req, &GATE_STATE, 1);
     return ESP_OK;
 }

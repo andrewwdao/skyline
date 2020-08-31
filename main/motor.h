@@ -14,34 +14,8 @@
 #ifndef __MOTOR_H
 #define __MOTOR_H
 #include "config.h"
-#include "driver/mcpwm.h"
-#include "soc/mcpwm_periph.h"
-
-#include "freertos/queue.h"
-#include "driver/gpio.h"
-
 
 // ------ Public constants ------------------------------------
-/**************** pinout define *********************/
-#define PWM_PIN 27 //Set GPIO as PWM0A
-#define INA_PIN 25
-#define INB_PIN 26
-#define EN_PIN  33
-#define MOTOR_PIN_SEL  ((1ULL<<EN_PIN)|(1ULL<<INA_PIN)|(1ULL<<INB_PIN))
-  
-// isr pins
-#define OPEN_LIMIT_PIN  22
-#define CLOSE_LIMIT_PIN 23
-#define OPEN_DOOR_PIN 18
-#define CLOSE_DOOR_PIN 19
-#define STOP_DOOR_PIN 21
-#define ISR_PIN_SEL  ((1ULL<<OPEN_LIMIT_PIN)|(1ULL<<CLOSE_LIMIT_PIN)|(1ULL<<OPEN_DOOR_PIN)|(1ULL<<CLOSE_DOOR_PIN)|(1ULL<<STOP_DOOR_PIN))
-
-/**************** parameters define *********************/
-// setting PWM properties
-#define FREQ    10000
-#define MAX_SPEED CONFIG_MAX_SPEED
-#define LIMIT_INTERVAL_MS CONFIG_LIMIT_INTERVAL
 // ------ Public function prototypes --------------------------
 void motor_task(void *);
 

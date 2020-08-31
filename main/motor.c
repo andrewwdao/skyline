@@ -15,8 +15,36 @@
 #define __MOTOR_C
 #include "motor.h"
 
-// ------ Private constants -----------------------------------
+#include "driver/mcpwm.h"
+#include "soc/mcpwm_periph.h"
 
+#include "freertos/queue.h"
+#include "driver/gpio.h"
+
+// ------ Private constants -----------------------------------
+// --- pinout define ---
+#define PWM_PIN 27 //Set GPIO as PWM0A
+#define INA_PIN 25
+#define INB_PIN 26
+#define EN_PIN  33
+#define MOTOR_PIN_SEL  ((1ULL<<EN_PIN)|(1ULL<<INA_PIN)|(1ULL<<INB_PIN))
+  
+// isr pins
+#define OPEN_LIMIT_PIN  22
+#define CLOSE_LIMIT_PIN 23
+#define OPEN_DOOR_PIN 18
+#define CLOSE_DOOR_PIN 19
+#define STOP_DOOR_PIN 21
+#define ISR_PIN_SEL  ((1ULL<<OPEN_LIMIT_PIN)|(1ULL<<CLOSE_LIMIT_PIN)|(1ULL<<OPEN_DOOR_PIN)|(1ULL<<CLOSE_DOOR_PIN)|(1ULL<<STOP_DOOR_PIN))
+#define OPEN_RF_PIN 1
+#define CLOSE_RF_PIN 2
+#define STOP_RF_PIN 3
+#define RF_PIN_SEL  ((1UL<<OPEN_RF_PIN)|(1ULL<<CLOSE_RF_PIN)|(1ULL<<STOP_RF_PIN))
+// --- parameters define ---
+// setting PWM properties
+#define FREQ    10000
+#define MAX_SPEED CONFIG_MAX_SPEED
+#define LIMIT_INTERVAL_MS CONFIG_LIMIT_INTERVAL
 // ------ Private function prototypes -------------------------
 static void motor_init(void);
 static void motor_stop(void);
@@ -45,34 +73,44 @@ static void IRAM_ATTR gpio_isr(void* arg)
 static void motor_isr_task(void* arg)
 {
     uint32_t io_num;
-    for(;;) {
-        if(xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
-          //ESP_LOGW(TAG, "GPIO[%d] intr, val: %d\n", io_num, gpio_get_level(io_num));
-          if ((io_num==OPEN_LIMIT_PIN)&&(!gpio_get_level(OPEN_LIMIT_PIN))) {
-            STOP_FLAG = true;
-            GATE_STATE = OPENED;
-            ESP_LOGW(TAG, "OPEN LIMIT isr!\n");
-          }
-          if ((io_num==CLOSE_LIMIT_PIN)&&(!gpio_get_level(CLOSE_LIMIT_PIN))) {
-            STOP_FLAG = true;
-            GATE_STATE = CLOSED;
-            ESP_LOGW(TAG, "CLOSE LIMIT isr!\n");
-          }
-          if ((io_num==STOP_DOOR_PIN)&&(!gpio_get_level(STOP_DOOR_PIN))) {
-            if (GATE_STATE == CLOSING) {GATE_STATE = OPENED;}
-            else if (GATE_STATE == OPENING) {GATE_STATE = CLOSED;}
-            STOP_FLAG = true;
-            ESP_LOGW(TAG, "STOP isr!\n");
-          }
-          if ((io_num==OPEN_DOOR_PIN)&&(!gpio_get_level(OPEN_DOOR_PIN))) {
-            GATE_STATE = OPENING;
-            ESP_LOGW(TAG, "OPEN isr!\n");
-          }
-          if ((io_num==CLOSE_DOOR_PIN)&&(!gpio_get_level(CLOSE_DOOR_PIN))) {
-            GATE_STATE = CLOSING;
-            ESP_LOGW(TAG, "CLOSE isr!\n");
-          }
-          DELAY_MS(10);
+    for(;;)
+    {
+        if(xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY))
+        {
+            //ESP_LOGW(TAG, "GPIO[%d] intr, val: %d\n", io_num, gpio_get_level(io_num));
+            if ((io_num==OPEN_LIMIT_PIN)&&(!gpio_get_level(OPEN_LIMIT_PIN)))
+            {
+              STOP_FLAG = true;
+              GATE_STATE = OPENED;
+              ESP_LOGW(TAG, "OPEN LIMIT isr!\n");
+            }
+            if ((io_num==CLOSE_LIMIT_PIN)&&(!gpio_get_level(CLOSE_LIMIT_PIN)))
+            {
+              STOP_FLAG = true;
+              GATE_STATE = CLOSED;
+              ESP_LOGW(TAG, "CLOSE LIMIT isr!\n");
+            }
+            if (((io_num==STOP_DOOR_PIN)&&(!gpio_get_level(STOP_DOOR_PIN)))||
+                ((io_num==STOP_RF_PIN)&&(gpio_get_level(STOP_RF_PIN))))
+            {
+              if (GATE_STATE == CLOSING) {GATE_STATE = OPENED;}
+              else if (GATE_STATE == OPENING) {GATE_STATE = CLOSED;}
+              STOP_FLAG = true;
+              ESP_LOGW(TAG, "STOP isr!\n");
+            }
+            if (((io_num==OPEN_DOOR_PIN)&&(!gpio_get_level(OPEN_DOOR_PIN)))||
+                ((io_num==OPEN_RF_PIN)&&(gpio_get_level(OPEN_RF_PIN))))
+            {
+              GATE_STATE = OPENING;
+              ESP_LOGW(TAG, "OPEN isr!\n");
+            }
+            if (((io_num==CLOSE_DOOR_PIN)&&(!gpio_get_level(CLOSE_DOOR_PIN)))||
+                ((io_num==CLOSE_RF_PIN)&&(gpio_get_level(CLOSE_RF_PIN))))
+            {
+              GATE_STATE = CLOSING;
+              ESP_LOGW(TAG, "CLOSE isr!\n");
+            }
+            DELAY_MS(10);
         }
     }
 }
@@ -82,8 +120,8 @@ static void motor_isr_task(void* arg)
 */
 static void motor_init(void)
 {
-	ESP_LOGI(TAG, "initializing gpio...\n");
-	gpio_config_t io_conf;
+    ESP_LOGI(TAG, "initializing gpio...\n");
+    gpio_config_t io_conf;
     //disable interrupt
     io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
     //set as output mode
@@ -96,7 +134,7 @@ static void motor_init(void)
     io_conf.pull_up_en = 0;
     //configure GPIO with the given settings
     gpio_config(&io_conf);
-	
+
     //set initial values for gpio
     gpio_set_level(EN_PIN, LOW);
     gpio_set_level(INA_PIN, LOW);
@@ -118,7 +156,7 @@ static void motor_init(void)
     
     ESP_LOGI(TAG, "Motor ready.\n");
 
-    //limit switches declaration
+    // --- limit switches and physical buttons declaration
     //interrupt of falling edge
     io_conf.intr_type = GPIO_PIN_INTR_NEGEDGE;
     //set as input mode    
@@ -126,7 +164,22 @@ static void motor_init(void)
     //bit mask of the pins
     io_conf.pin_bit_mask = ISR_PIN_SEL;
     //enable pull-up mode
+    io_conf.pull_up_en = 1;
+    //configure GPIO with the given settings
+    gpio_config(&io_conf);
+
+    // --- RF buttons declaration
+    //interrupt of rising edge - since the RF module using reversed logic
+    io_conf.intr_type = GPIO_PIN_INTR_POSEDGE;
+    //set as input mode    
+    io_conf.mode = GPIO_MODE_INPUT;
+    //bit mask of the pins
+    io_conf.pin_bit_mask = RF_PIN_SEL;
+    //enable pull-down mode
+    io_conf.pull_down_en = 1;
+    //disable pull-up mode
     io_conf.pull_up_en = 0;
+    //configure GPIO with the given settings
     gpio_config(&io_conf);
 
     //create a queue to handle gpio event from isr
@@ -149,6 +202,9 @@ static void motor_init(void)
     gpio_isr_handler_add(OPEN_DOOR_PIN, gpio_isr, (void*) OPEN_DOOR_PIN);
     gpio_isr_handler_add(CLOSE_DOOR_PIN, gpio_isr, (void*) CLOSE_DOOR_PIN);
     gpio_isr_handler_add(STOP_DOOR_PIN, gpio_isr, (void*) STOP_DOOR_PIN);
+    gpio_isr_handler_add(OPEN_RF_PIN, gpio_isr, (void*) OPEN_RF_PIN);
+    gpio_isr_handler_add(CLOSE_RF_PIN, gpio_isr, (void*) CLOSE_RF_PIN);
+    gpio_isr_handler_add(STOP_RF_PIN, gpio_isr, (void*) STOP_RF_PIN);
     ESP_LOGI(TAG, "ISR for Limit switches and buttons ready.\n");
 }
 
@@ -160,7 +216,6 @@ static void motor_stop(void)
   if (gpio_get_level(EN_PIN)| //if motor is still active, then stop it
       gpio_get_level(INA_PIN)|
       gpio_get_level(INB_PIN))
-
   {
     gpio_set_level(EN_PIN, LOW);
     gpio_set_level(INA_PIN, LOW);
@@ -218,20 +273,23 @@ static void motor_close(void)
         
         int dutyCycle=20;
         int64_t millis = esp_timer_get_time();
-        for(;;) {
-        dutyCycle=(dutyCycle<MAX_SPEED)?(dutyCycle+1):(dutyCycle);
-        // ledcWrite(CHANNEL, dutyCycle);// changing the PWM duty cycle
-        mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, dutyCycle);
-        mcpwm_set_duty_type(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, MCPWM_DUTY_MODE_0); //call this each time, if operator was previously in low/high state
+        for(;;)
+        {
+          dutyCycle=(dutyCycle<MAX_SPEED)?(dutyCycle+1):(dutyCycle);
+          // ledcWrite(CHANNEL, dutyCycle);// changing the PWM duty cycle
+          mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, dutyCycle);
+          mcpwm_set_duty_type(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, MCPWM_DUTY_MODE_0); //call this each time, if operator was previously in low/high state
 
-        if (STOP_FLAG | ((esp_timer_get_time()-millis)>LIMIT_INTERVAL_MS)) {
-            STOP_FLAG = false;
-            motor_stop();
-            return;
+          if (STOP_FLAG | ((esp_timer_get_time()-millis)>LIMIT_INTERVAL_MS))
+          {
+              STOP_FLAG = false;
+              motor_stop();
+              return;
+          }
+          DELAY_MS(100);
         }
-        DELAY_MS(100);
-        }
-    } else { // if signal = LOW --> limit reached, don't move motor
+    } else // if signal = LOW --> limit reached, don't move motor
+    {
         ESP_LOGW(TAG, "Limit reached! Door already closed.\n");
         GATE_STATE = CLOSED;
         return;
@@ -247,14 +305,11 @@ void motor_task(void *arg)
   //mcpwm gpio initialization and configuration
   motor_init();
   /***************************************LOOP************************************************/
-  for (;;) {
-    if ((GATE_STATE == CLOSED)||(GATE_STATE == OPENED)) {
-      motor_stop();
-    } else if (GATE_STATE == CLOSING) {
-      motor_close();
-    } else if (GATE_STATE == OPENING) {
-      motor_open();
-    }
+  for (;;) 
+  {
+    if ((GATE_STATE == CLOSED)||(GATE_STATE == OPENED)) {motor_stop();}
+    else if (GATE_STATE == CLOSING) {motor_close();}
+    else if (GATE_STATE == OPENING) {motor_open();}
   }
 }
 

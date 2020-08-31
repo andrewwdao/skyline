@@ -12,8 +12,26 @@
 #ifndef __WEBSERVER_C
 #define __WEBSERVER_C
 #include "webserver.h"
-// #include "my_html.h"
+
 // ------ Private constants -----------------------------------
+/**
+ * @note set the ssid and password via "idf.py menuconfig
+ */
+#define WIFI_SSID CONFIG_WIFI_SSID
+#define WIFI_PWD  CONFIG_WIFI_PWD
+
+#define LISTEN_INTERVAL CONFIG_LISTEN_INTERVAL
+
+#if CONFIG_POWER_SAVE_MIN
+#define PS_MODE WIFI_PS_MIN_MODEM
+#elif CONFIG_POWER_SAVE_MAX
+#define PS_MODE WIFI_PS_MAX_MODEM
+#elif CONFIG_POWER_SAVE_NONE
+#define PS_MODE WIFI_PS_NONE
+#else
+#define PS_MODE WIFI_PS_NONE
+#endif
+
 #define CLOSE_BUTTON 'c'
 #define STOP_BUTTON  's'
 #define OPEN_BUTTON  'o'

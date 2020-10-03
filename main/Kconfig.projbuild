@@ -1,14 +1,20 @@
 menu "Skyline Window Configuration"
 
     config MAX_SPEED
-        int "Motor speed"
+        int "Motor maximum speed"
         default 128
         help
-            Duty cycle that control the motor speed. Range from 0-255. 
+            Duty cycle that control the motor max speed. Range from 0-255. 
+
+    config MIN_SPEED
+        int "Motor startup speed"
+        default 20
+        help
+            Duty cycle that control the motor starup speed. Range from 0-255. 
 
     config LIMIT_INTERVAL
-        int "Maximum operation Interval (ms)"
-        default 10000
+        int "Maximum operation Interval (us)"
+        default 40000000
         help
             Maximum operation interval for motor (in ms).
 

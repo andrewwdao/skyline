@@ -11,7 +11,7 @@
 
 // ------ Public variables ------------------------------------
 /** @brief status of the gate, which will involve control the motor */
-char GATE_STATE = OPENED;
+char GATE_STATE = STOPPED;
 /** @brief flag for stopping the motor */
 bool STOP_FLAG = false;
 /** @brief tag used for ESP serial console messages */

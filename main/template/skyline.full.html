@@ -167,15 +167,18 @@
                     console.log(this.responseText);
                     var stateHeader = document.getElementById('state');
                     if (this.responseText === '0') {
-                        stateHeader.innerHTML = 'C&#7917;a M&#7903;';
-                        stateHeader.className = 'open';
-                    } else if (this.responseText === '1') {
                         stateHeader.innerHTML = 'C&#7917;a &#272;&#243;ng';
                         stateHeader.className = 'close';
+                    } else if (this.responseText === '1') {
+                        stateHeader.innerHTML = 'C&#7917;a M&#7903;';
+                        stateHeader.className = 'open';
                     } else if (this.responseText === '2') {
+                        stateHeader.innerHTML = 'D&#7915;ng';
+                        stateHeader.className = 'open';
+                    } else if (this.responseText === '3') {
                         stateHeader.innerHTML = 'C&#7917;a &#273;ang &#273;&#243;ng...';
                         stateHeader.className = 'closing';
-                    } else if (this.responseText === '3') {
+                    } else if (this.responseText === '4') {
                         stateHeader.innerHTML = 'C&#7917;a &#273;ang m&#7903;...';
                         stateHeader.className = 'opening';
                     }

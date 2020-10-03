@@ -22,7 +22,8 @@
 
 #define CLOSED  '0'
 #define OPENED  '1'
-#define CLOSING '2'
-#define OPENING '3'
+#define STOPPED '2'
+#define CLOSING '3'
+#define OPENING '4'
 
 #endif //__CONFIG_H

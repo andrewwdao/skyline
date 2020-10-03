@@ -119,15 +119,22 @@ static esp_err_t rotate_get_handler(httpd_req_t *req)
         if (httpd_req_get_hdr_value_str(req, "mode", buf, buf_len) == ESP_OK) {
             ESP_LOGI(TAG, "mode: %s", buf);
             if (*buf==CLOSE_BUTTON) {
+                if (GATE_STATE == OPENING) {
+                    STOP_FLAG = true;
+                    GATE_STATE = STOPPED;
+                }
+                DELAY_MS(800);
                 GATE_STATE = CLOSING;
             } else if (*buf==STOP_BUTTON) {
                 STOP_FLAG = true;
-                if (GATE_STATE == CLOSING) {
-                    GATE_STATE = OPENED;
-                } else if (GATE_STATE == OPENING) {
-                    GATE_STATE = CLOSED;
-                }
+                if (!((GATE_STATE==OPENED)|(GATE_STATE==CLOSED))) {GATE_STATE = STOPPED;}
+                
             } else if (*buf==OPEN_BUTTON) {
+                if (GATE_STATE == CLOSING) {
+                    STOP_FLAG = true;
+                    GATE_STATE = STOPPED;
+                }
+                DELAY_MS(800);
                 GATE_STATE = OPENING;
             }
         } else {
@@ -185,8 +192,8 @@ void wifiSTA_init(void)
     //set static ip - https://esp32.com/viewtopic.php?f=2&t=14689
     esp_netif_dhcpc_stop(sta_netif);
     esp_netif_ip_info_t ip_info;
-    IP4_ADDR(&ip_info.ip, 192, 168, 43, 174);
-   	IP4_ADDR(&ip_info.gw, 192, 168, 43, 1);
+    IP4_ADDR(&ip_info.ip, 192, 168, 1, 174);
+   	IP4_ADDR(&ip_info.gw, 192, 168, 1, 1);
    	IP4_ADDR(&ip_info.netmask, 255, 255, 255, 0);
 
     esp_netif_set_ip_info(sta_netif, &ip_info);

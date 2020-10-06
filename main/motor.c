@@ -251,14 +251,16 @@ static void motor_open(void)
       
       int dutyCycle=MIN_SPEED;
       int64_t millis = esp_timer_get_time();
+      uint8_t time_limiter = 0;
       for(;;) {
       dutyCycle=(dutyCycle<MAX_SPEED)?(dutyCycle+1):(dutyCycle);
       mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, dutyCycle);
       mcpwm_set_duty_type(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, MCPWM_DUTY_MODE_0); //call this each time, if operator was previously in low/high state
-
-      if (STOP_FLAG | ((esp_timer_get_time()-millis)>LIMIT_INTERVAL_MS)) {
-            STOP_FLAG = false;
+      time_limiter = (esp_timer_get_time()-millis)>LIMIT_INTERVAL_MS; 
+      if (STOP_FLAG | time_limiter) {
             motor_stop();
+            STOP_FLAG = false;
+            if (time_limiter) GATE_STATE = STOPPED;
             return;
         }
       DELAY_MS(100);
@@ -284,19 +286,20 @@ static void motor_close(void)
         
         int dutyCycle=MIN_SPEED;
         int64_t millis = esp_timer_get_time();
+        uint8_t time_limiter = 0;
         for(;;)
         {
           dutyCycle=(dutyCycle<MAX_SPEED)?(dutyCycle+1):(dutyCycle);
           // ledcWrite(CHANNEL, dutyCycle);// changing the PWM duty cycle
           mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, dutyCycle);
           mcpwm_set_duty_type(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, MCPWM_DUTY_MODE_0); //call this each time, if operator was previously in low/high state
-
-          if (STOP_FLAG | ((esp_timer_get_time()-millis)>LIMIT_INTERVAL_MS))
-          {
-              STOP_FLAG = false;
-              motor_stop();
-              return;
-          }
+          time_limiter = (esp_timer_get_time()-millis)>LIMIT_INTERVAL_MS; 
+          if (STOP_FLAG | time_limiter) {
+            motor_stop();
+            STOP_FLAG = false;
+            if (time_limiter) GATE_STATE = STOPPED;
+            return;
+        }
           DELAY_MS(100);
         }
     } else // if signal = LOW --> limit reached, don't move motor

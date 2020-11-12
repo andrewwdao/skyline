@@ -190,13 +190,12 @@ void wifiSTA_init(void)
     assert(sta_netif);
 
     //set static ip - https://esp32.com/viewtopic.php?f=2&t=14689
-    esp_netif_dhcpc_stop(sta_netif);
-    esp_netif_ip_info_t ip_info;
-    IP4_ADDR(&ip_info.ip, 192, 168, 1, 174);
-   	IP4_ADDR(&ip_info.gw, 192, 168, 1, 1);
-   	IP4_ADDR(&ip_info.netmask, 255, 255, 255, 0);
-
-    esp_netif_set_ip_info(sta_netif, &ip_info);
+    // esp_netif_dhcpc_stop(sta_netif);
+    // esp_netif_ip_info_t ip_info;
+    // IP4_ADDR(&ip_info.ip, 192, 168, 1, 174);
+   	// IP4_ADDR(&ip_info.gw, 192, 168, 1, 1);
+   	// IP4_ADDR(&ip_info.netmask, 255, 255, 255, 0);
+    // esp_netif_set_ip_info(sta_netif, &ip_info);
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
